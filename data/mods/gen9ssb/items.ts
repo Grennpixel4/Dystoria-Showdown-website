@@ -11,14 +11,12 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	},
 	// Arya
 	flygonite: {
-		inherit: true,
+		name: "Flygonite",
 		spritenum: 111,
 		itemUser: ["Flygon"],
-		megaEvolves: "Flygon",
-		megaStone: "Trapinch",
+		megaStone: { "Flygon": "Trapinch" },
 		onTakeItem(item, source) {
-			if (item.megaEvolves === source.baseSpecies.baseSpecies) return false;
-			return true;
+			return !item.megaStone?.[source.baseSpecies.baseSpecies];
 		},
 		desc: "If held by a Flygon, this item allows it to Mega Evolve in battle.",
 	},
@@ -36,7 +34,7 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	gardevoirite: {
 		inherit: true,
 		itemUser: ["Ralts"],
-		megaEvolves: "Ralts",
+		megaStone: { "Ralts": "Gardevoir-Mega" },
 		desc: "If held by a Ralts, this item allows it to Mega Evolve in battle.",
 	},
 	// Peary
@@ -83,7 +81,7 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		inherit: true,
 		onDamage(damage, target, source, effect) {
 			const chance = target.hasAbility('adorablegrace') ? 2 : 1;
-			if (this.randomChance(chance, 10) && damage >= target.hp && effect && effect.effectType === 'Move') {
+			if (this.randomChance(chance, 10) && damage >= target.hp && effect?.effectType === 'Move') {
 				this.add("-activate", target, "item: Focus Band");
 				return target.hp - 1;
 			}

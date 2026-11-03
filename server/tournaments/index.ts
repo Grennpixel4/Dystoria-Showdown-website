@@ -1,9 +1,9 @@
-
-import {Elimination} from './generator-elimination';
-import {RoundRobin} from './generator-round-robin';
-import {Utils} from '../../lib';
-import {PRNG} from '../../sim/prng';
-import type {BestOfGame} from '../room-battle-bestof';
+import { Elimination } from './generator-elimination';
+import { RoundRobin } from './generator-round-robin';
+import { Utils } from '../../lib';
+import { PRNG } from '../../sim/prng';
+import type { BattleReady } from '../ladders-challenges';
+import type { BestOfGame } from '../room-battle-bestof';
 
 export interface TournamentRoomSettings {
 	allowModjoin?: boolean;
@@ -16,7 +16,7 @@ export interface TournamentRoomSettings {
 	forceTimer?: boolean;
 	playerCap?: number;
 	recentToursLength?: number;
-	recentTours?: {name: string, baseFormat: string, time: number}[];
+	recentTours?: { name: string, baseFormat: string, time: number }[];
 	blockRecents?: boolean;
 }
 
@@ -46,16 +46,11 @@ function usersToNames(users: TournamentPlayer[]) {
 }
 
 export class TournamentPlayer extends Rooms.RoomGamePlayer<Tournament> {
-	readonly availableMatches: Set<TournamentPlayer>;
+	pendingMatch: [TournamentPlayer, TournamentPlayer] | null;
 	isBusy: boolean;
-	inProgressMatch: {to: TournamentPlayer, room: GameRoom} | null;
-	pendingChallenge: {
-		from?: TournamentPlayer,
-		to?: TournamentPlayer,
-		team: string,
-		hidden: boolean,
-		inviteOnly: boolean,
-	} | null;
+	inProgressMatch: { to: TournamentPlayer, room: GameRoom } | null;
+	ready: BattleReady | null;
+	readyRequest: object | null;
 	isDisqualified: boolean;
 	isEliminated: boolean;
 	autoDisqualifyWarned: boolean;
@@ -66,10 +61,11 @@ export class TournamentPlayer extends Rooms.RoomGamePlayer<Tournament> {
 	score: number;
 	constructor(user: User | string | null, game: Tournament, num: number) {
 		super(user, game, num);
-		this.availableMatches = new Set();
+		this.pendingMatch = null;
 		this.isBusy = false;
 		this.inProgressMatch = null;
-		this.pendingChallenge = null;
+		this.ready = null;
+		this.readyRequest = null;
 		this.isDisqualified = false;
 		this.isEliminated = false;
 		this.autoDisqualifyWarned = false;
@@ -108,9 +104,6 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 	bracketUpdateTimer: NodeJS.Timeout | null;
 	bracketCache: AnyObject | null;
 	isAvailableMatchesInvalidated: boolean;
-	availableMatchesCache: {
-		challenges: Map<TournamentPlayer, TournamentPlayer[]>, challengeBys: Map<TournamentPlayer, TournamentPlayer[]>,
-	};
 	autoDisqualifyTimeout: number;
 	autoDisqualifyTimer: NodeJS.Timeout | null;
 	autoStartTimeout: number;
@@ -132,7 +125,7 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		this.baseFormat = formatId;
 		this.fullFormat = formatId;
 		// This will sometimes be sent alone in updates as "format", if the tour doesn't have a custom name
-		this.name = name || formatId;
+		this.name = name || Dex.formats.get(formatId).name;
 		this.customRules = [];
 		this.generator = generator;
 		this.isRated = isRated;
@@ -154,7 +147,6 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		this.bracketCache = null;
 
 		this.isAvailableMatchesInvalidated = true;
-		this.availableMatchesCache = {challenges: new Map(), challengeBys: new Map()};
 
 		this.autoDisqualifyTimeout = Infinity;
 		this.autoDisqualifyTimer = null;
@@ -176,10 +168,12 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		room.send(`|tournament|update|${JSON.stringify(update)}`);
 		this.update();
 	}
-	destroy() {
+	override destroy() {
 		this.forceEnd();
 	}
 	remove() {
+		if (this.bracketUpdateTimer) clearTimeout(this.bracketUpdateTimer);
+		for (const player of this.players) this.clearReady(player);
 		if (this.autoStartTimer) clearTimeout(this.autoStartTimer);
 		if (this.autoDisqualifyTimer) clearTimeout(this.autoDisqualifyTimer);
 		for (const roomid of this.completedMatches) {
@@ -200,7 +194,7 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		}
 
 		this.generator = generator;
-		this.room.send(`|tournament|update|${JSON.stringify({generator: generator.name})}`);
+		this.room.send(`|tournament|update|${JSON.stringify({ generator: generator.name })}`);
 		this.isBracketInvalidated = true;
 		this.update();
 		return true;
@@ -231,7 +225,7 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		this.customRules = customRules;
 		if (this.name === this.baseFormat) {
 			this.name = this.getDefaultCustomName();
-			this.room.send(`|tournament|update|${JSON.stringify({format: this.name})}`);
+			this.room.send(`|tournament|update|${JSON.stringify({ format: this.name })}`);
 			this.update();
 		}
 		return true;
@@ -290,8 +284,8 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 			(this.isTournamentStarted && this.isAvailableMatchesInvalidated)) {
 			this.room.add(
 				"Error: update() called with a target user when data invalidated: " +
-				(!this.bracketUpdateTimer && this.isBracketInvalidated) + ", " +
-				(this.isTournamentStarted && this.isAvailableMatchesInvalidated) +
+				`${(!this.bracketUpdateTimer && this.isBracketInvalidated) as DebugOutput}, ` +
+				`${(this.isTournamentStarted && this.isAvailableMatchesInvalidated) as DebugOutput}` +
 				"; Please report this to an admin."
 			);
 			return;
@@ -325,27 +319,13 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		};
 		if (this.name !== this.baseFormat) update.teambuilderFormat = this.baseFormat;
 		connection.sendTo(this.room, `|tournament|update|${JSON.stringify(update)}`);
-		if (this.isTournamentStarted && isJoined) {
-			const update2 = {
-				challenges: usersToNames(this.availableMatchesCache.challenges.get(this.playerTable[targetUser.id])!),
-				challengeBys: usersToNames(this.availableMatchesCache.challengeBys.get(this.playerTable[targetUser.id])!),
-			};
-			connection.sendTo(this.room, `|tournament|update|${JSON.stringify(update2)}`);
-
-			const pendingChallenge = this.playerTable[targetUser.id].pendingChallenge;
-			if (pendingChallenge) {
-				if (pendingChallenge.to) {
-					connection.sendTo(this.room, `|tournament|update|${JSON.stringify({challenging: pendingChallenge.to.name})}`);
-				} else if (pendingChallenge.from) {
-					connection.sendTo(this.room, `|tournament|update|${JSON.stringify({challenged: pendingChallenge.from.name})}`);
-				}
-			}
-		}
+		connection.sendTo(this.room, `|tournament|update|${JSON.stringify(this.getPlayerUpdate(possiblePlayer))}`);
 		connection.sendTo(this.room, '|tournament|updateEnd');
 	}
 
 	update() {
 		if (this.ended) return;
+		if (this.isTournamentStarted && this.isAvailableMatchesInvalidated) this.updateMatches();
 		if (this.isBracketInvalidated) {
 			if (Date.now() < this.lastBracketUpdate + BRACKET_MINIMUM_UPDATE_INTERVAL) {
 				if (this.bracketUpdateTimer) clearTimeout(this.bracketUpdateTimer);
@@ -358,19 +338,14 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 
 				this.bracketCache = this.getBracketData();
 				this.isBracketInvalidated = false;
-				this.room.send(`|tournament|update|${JSON.stringify({bracketData: this.bracketCache})}`);
+				this.room.send(`|tournament|update|${JSON.stringify({ bracketData: this.bracketCache })}`);
 			}
 		}
 
 		if (this.isTournamentStarted && this.isAvailableMatchesInvalidated) {
-			this.availableMatchesCache = this.getAvailableMatches();
-
 			this.isAvailableMatchesInvalidated = false;
-			for (const [player, opponents] of this.availableMatchesCache.challenges) {
-				player.sendRoom(`|tournament|update|${JSON.stringify({challenges: usersToNames(opponents)})}`);
-			}
-			for (const [player, opponents] of this.availableMatchesCache.challengeBys) {
-				player.sendRoom(`|tournament|update|${JSON.stringify({challengeBys: usersToNames(opponents)})}`);
+			for (const player of this.players) {
+				player.sendRoom(`|tournament|update|${JSON.stringify(this.getPlayerUpdate(player))}`);
 			}
 		}
 		this.room.send('|tournament|updateEnd');
@@ -380,7 +355,7 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		return Punishments.hasRoomPunishType(room, toID(user), 'TOURBAN');
 	}
 
-	removeBannedUser(userid: User | ID) {
+	override removeBannedUser(userid: User | ID) {
 		userid = toID(userid);
 		if (!(userid in this.playerTable)) return;
 		if (this.isTournamentStarted) {
@@ -415,23 +390,24 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 			return;
 		}
 
-		if ((this.room.settings.tournaments?.autoconfirmedOnly || this.autoconfirmedOnly) &&
-		   !user.autoconfirmed && !user.trusted) {
+		if (
+			(this.room.settings.tournaments?.autoconfirmedOnly || this.autoconfirmedOnly) &&
+			!user.autoconfirmed && !user.trusted
+		) {
 			user.popup("Signups for tournaments are only available for autoconfirmed users in this room.");
 			return;
 		}
 
 		const gameCount = user.games.size;
 		if (gameCount > 4) {
-			output.errorReply("Due to high load, you are limited to 4 games at the same time.");
-			return;
+			throw new Chat.ErrorMessage("Due to high load, you are limited to 4 games at the same time.");
 		}
 
 		if (!Config.noipchecks) {
 			for (const otherPlayer of this.players) {
 				if (!otherPlayer) continue;
 				const otherUser = Users.get(otherPlayer.id);
-				if (otherUser && otherUser.latestIp === user.latestIp) {
+				if (otherUser?.latestIp === user.latestIp) {
 					output.sendReply('|tournament|error|AltUserAlreadyAdded');
 					return;
 				}
@@ -485,21 +461,17 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 			return;
 		}
 		if (!(user.id in this.playerTable)) {
-			output.errorReply(`${user.name} isn't in the tournament.`);
-			return;
+			throw new Chat.ErrorMessage(`${user.name} isn't in the tournament.`);
 		}
 		if (!replacementUser.named) {
-			output.errorReply(`${replacementUser.name} must be named to join the tournament.`);
-			return;
+			throw new Chat.ErrorMessage(`${replacementUser.name} must be named to join the tournament.`);
 		}
 		if (replacementUser.id in this.playerTable) {
-			output.errorReply(`${replacementUser.name} is already in the tournament.`);
-			return;
+			throw new Chat.ErrorMessage(`${replacementUser.name} is already in the tournament.`);
 		}
 		if (Tournament.checkBanned(this.room, replacementUser) || Punishments.isBattleBanned(replacementUser) ||
 			replacementUser.namelocked) {
-			output.errorReply(`${replacementUser.name} is banned from joining tournaments.`);
-			return;
+			throw new Chat.ErrorMessage(`${replacementUser.name} is banned from joining tournaments.`);
 		}
 		if ((this.room.settings.tournaments?.autoconfirmedOnly || this.autoconfirmedOnly) && !user.autoconfirmed) {
 			user.popup("Signups for tournaments are only available for autoconfirmed users in this room.");
@@ -510,22 +482,18 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 			for (const otherPlayer of this.players) {
 				if (!otherPlayer) continue;
 				const otherUser = Users.get(otherPlayer.id);
-				if (otherUser &&
-					otherUser.latestIp === replacementUser.latestIp &&
+				if (otherUser?.latestIp === replacementUser.latestIp &&
 					replacementUser.latestIp !== user.latestIp) {
-					output.errorReply(`${replacementUser.name} already has an alt in the tournament.`);
-					return;
+					throw new Chat.ErrorMessage(`${replacementUser.name} already has an alt in the tournament.`);
 				}
 			}
 		}
 		if (!(replacementUser.id in this.room.users)) {
-			output.errorReply(`${replacementUser.name} is not in this room (${this.room.title}).`);
-			return;
+			throw new Chat.ErrorMessage(`${replacementUser.name} is not in this room (${this.room.title}).`);
 		}
 		const player = this.playerTable[user.id];
-		if (player.pendingChallenge) {
-			this.cancelChallenge(user, output);
-		}
+		this.clearReady(player);
+		this.clearMatch(player);
 
 		// Replace the player
 		this.setPlayerUser(player, replacementUser);
@@ -536,7 +504,7 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 			matchPlayer = player;
 		} else {
 			for (const p of this.players) {
-				if (p.inProgressMatch && p.inProgressMatch.to === player) {
+				if (p.inProgressMatch?.to === player) {
 					matchPlayer = p;
 					break;
 				}
@@ -561,12 +529,6 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		this.update();
 		this.updateFor(user);
 		this.updateFor(replacementUser);
-		const challengePlayer = player.pendingChallenge &&
-			(player.pendingChallenge.from || player.pendingChallenge.to);
-		if (challengePlayer) {
-			const challengeUser = Users.getExact(challengePlayer.id);
-			if (challengeUser) this.updateFor(challengeUser);
-		}
 
 		this.room.add(`|tournament|replace|${user.name}|${replacementUser.name}`);
 		return true;
@@ -581,7 +543,7 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		}
 		if (data.type === 'tree') {
 			if (!data.rootNode) {
-				data.users = usersToNames(this.players.sort());
+				data.users = usersToNames(Utils.sortBy(this.players, player => player.id));
 				return data;
 			}
 			const queue = [data.rootNode];
@@ -589,11 +551,6 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 				const node = queue.shift();
 
 				if (node.state === 'available') {
-					const pendingChallenge = node.children[0].team.pendingChallenge;
-					if (pendingChallenge && node.children[1].team === pendingChallenge.to) {
-						node.state = 'challenging';
-					}
-
 					const inProgressMatch = node.children[0].team.inProgressMatch;
 					if (inProgressMatch && node.children[1].team === inProgressMatch.to) {
 						node.state = 'inprogress';
@@ -614,15 +571,10 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		} else if (data.type === 'table') {
 			if (this.isTournamentStarted) {
 				for (const [r, row] of data.tableContents.entries()) {
-					const pendingChallenge = data.tableHeaders.rows[r].pendingChallenge;
 					const inProgressMatch = data.tableHeaders.rows[r].inProgressMatch;
-					if (pendingChallenge || inProgressMatch) {
+					if (inProgressMatch) {
 						for (const [c, cell] of row.entries()) {
 							if (!cell) continue;
-
-							if (pendingChallenge && data.tableHeaders.cols[c] === pendingChallenge.to) {
-								cell.state = 'challenging';
-							}
 
 							if (inProgressMatch && data.tableHeaders.cols[c] === inProgressMatch.to) {
 								cell.state = 'inprogress';
@@ -675,45 +627,28 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		this.update();
 		return true;
 	}
-	getAvailableMatches() {
-		const matches = this.generator.getAvailableMatches() as [TournamentPlayer, TournamentPlayer][];
-		if (typeof matches === 'string') throw new Error(`Error from getAvailableMatches(): ${matches}`);
-
-		const challenges = new Map<TournamentPlayer, TournamentPlayer[]>();
-		const challengeBys = new Map<TournamentPlayer, TournamentPlayer[]>();
-		const oldAvailableMatches = new Map<TournamentPlayer, boolean>();
-
-		for (const user of this.players) {
-			challenges.set(user, []);
-			challengeBys.set(user, []);
-
-			let oldAvailableMatch = false;
-			const availableMatches = user.availableMatches;
-			if (availableMatches.size) {
-				oldAvailableMatch = true;
-				availableMatches.clear();
-			}
-			oldAvailableMatches.set(user, oldAvailableMatch);
+	getPlayerUpdate(player?: TournamentPlayer) {
+		const canReady = player && this.isTournamentStarted && !this.ended && !player.isBusy &&
+			!player.isDisqualified && !player.isEliminated &&
+			!(this.generator instanceof RoundRobin && player.games === this.generator.matchesPerPlayer);
+		let opponent = null;
+		if (canReady) {
+			const match = player.pendingMatch;
+			opponent = match ? match[match[0] === player ? 1 : 0].name : '(next available player)';
 		}
-
-		for (const match of matches) {
-			challenges.get(match[0])!.push(match[1]);
-			challengeBys.get(match[1])!.push(match[0]);
-
-			match[0].availableMatches.add(match[1]);
-		}
-
-		const now = Date.now();
-		for (const player of this.players) {
-			if (oldAvailableMatches.get(player)) continue;
-
-			if (player.availableMatches.size) player.lastActionTime = now;
-		}
-
 		return {
-			challenges,
-			challengeBys,
+			challenges: [],
+			challengeBys: [],
+			challenged: player?.ready ? null : opponent,
+			challenging: player?.ready ? opponent : null,
 		};
+	}
+
+	clearMatch(player: TournamentPlayer) {
+		if (!player.pendingMatch) return;
+		const [p1, p2] = player.pendingMatch;
+		p1.pendingMatch = p2.pendingMatch = null;
+		this.isAvailableMatchesInvalidated = true;
 	}
 
 	disqualifyUser(userid: ID, output: Chat.CommandContext | null = null, reason: string | null = null, isSelfDQ = false) {
@@ -752,19 +687,8 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 
 		player.isBusy = false;
 
-		const challenge = player.pendingChallenge;
-		if (challenge) {
-			player.pendingChallenge = null;
-			if (challenge.to) {
-				challenge.to.isBusy = false;
-				challenge.to.pendingChallenge = null;
-				challenge.to.sendRoom('|tournament|update|{"challenged":null}');
-			} else if (challenge.from) {
-				challenge.from.isBusy = false;
-				challenge.from.pendingChallenge = null;
-				challenge.from.sendRoom('|tournament|update|{"challenging":null}');
-			}
-		}
+		this.clearReady(player);
+		this.clearMatch(player);
 
 		const matchFrom = player.inProgressMatch;
 		if (matchFrom) {
@@ -772,20 +696,20 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 			player.inProgressMatch = null;
 			matchFrom.room.setParent(null);
 			this.completedMatches.add(matchFrom.room.roomid);
-			matchFrom.room.game?.forfeit?.(player.name);
+			matchFrom.room.game?.forfeit?.(player.name, ' was disqualified from the tournament.');
 		}
 
 		let matchTo = null;
 		for (const playerFrom of this.players) {
 			const match = playerFrom.inProgressMatch;
-			if (match && match.to === player) matchTo = playerFrom;
+			if (match?.to === player) matchTo = playerFrom;
 		}
 		if (matchTo) {
 			matchTo.isBusy = false;
 			const matchRoom = matchTo.inProgressMatch!.room;
 			matchRoom.setParent(null);
 			this.completedMatches.add(matchRoom.roomid);
-			if (matchRoom.game) matchRoom.game.forfeit?.(player.id);
+			matchRoom.game?.forfeit?.(player.id, ' was disqualified from the tournament.');
 			matchTo.inProgressMatch = null;
 		}
 
@@ -859,28 +783,19 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 			return false;
 		}
 		if (this.autoDisqualifyTimer) clearTimeout(this.autoDisqualifyTimer);
+		if (this.isAvailableMatchesInvalidated) this.update();
 
 		const now = Date.now();
 		for (const player of this.players) {
 			const time = player.lastActionTime;
-			let availableMatches = false;
-			if (player.availableMatches.size) availableMatches = true;
-			const pendingChallenge = player.pendingChallenge;
-
-			if (!availableMatches && !pendingChallenge) {
+			if (!player.pendingMatch || player.isBusy || player.isDisqualified || player.isEliminated) {
 				player.autoDisqualifyWarned = false;
 				continue;
 			}
-			if (pendingChallenge?.to) continue;
+			if (player.ready) continue;
 
 			if (now > time + this.autoDisqualifyTimeout && player.autoDisqualifyWarned) {
-				let reason;
-				if (pendingChallenge?.from) {
-					reason = "You failed to accept your opponent's challenge in time.";
-				} else {
-					reason = "You failed to challenge your opponent in time.";
-				}
-				this.disqualifyUser(player.id, output, reason);
+				this.disqualifyUser(player.id, output, "You failed to ready up for your match in time.");
 				this.room.update();
 			} else if (now > time + this.autoDisqualifyTimeout - AUTO_DISQUALIFY_WARNING_TIMEOUT) {
 				if (player.autoDisqualifyWarned) continue;
@@ -927,168 +842,137 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		this.room.add(`The tournament will start once ${this.playerCap} players have joined.`);
 	}
 
-	async challenge(user: User, targetUserid: ID, output: Chat.CommandContext) {
+	clearReady(player: TournamentPlayer) {
+		player.ready = null;
+		player.readyRequest = null;
+		this.isAvailableMatchesInvalidated = true;
+	}
+
+	async ready(user: User, output: Chat.CommandContext) {
 		if (!this.isTournamentStarted) {
 			output.sendReply('|tournament|error|NotStarted');
 			return;
 		}
-
-		if (!(user.id in this.playerTable)) {
+		const player = this.playerTable[user.id];
+		if (!player) {
 			output.sendReply('|tournament|error|UserNotAdded');
 			return;
 		}
-
-		if (!(targetUserid in this.playerTable)) {
+		if (this.ended || player.isBusy || player.isDisqualified || player.isEliminated ||
+			(this.generator instanceof RoundRobin && player.games === this.generator.matchesPerPlayer)) {
 			output.sendReply('|tournament|error|InvalidMatch');
 			return;
 		}
+		if (player.ready || player.readyRequest) return;
 
-		const from = this.playerTable[user.id];
-		const to = this.playerTable[targetUserid];
-		const availableMatches = from.availableMatches;
-		if (!availableMatches?.has(to)) {
-			output.sendReply('|tournament|error|InvalidMatch');
-			return;
+		// Validation can finish after cancellation, replacement, or the tournament ending.
+		const request = {};
+		player.readyRequest = request;
+		let ready;
+		try {
+			ready = await Ladders(this.fullFormat).prepBattle(output.connection, 'tour');
+		} catch (error) {
+			if (player.readyRequest === request) player.readyRequest = null;
+			throw error;
 		}
+		if (player.readyRequest !== request) return;
+		player.readyRequest = null;
+		if (!ready || this.ended || this.playerTable[user.id] !== player || ready.userid !== player.id ||
+			!user.connected || player.isBusy || player.isDisqualified || player.isEliminated) return;
 
-		if (from.isBusy || to.isBusy) {
-			this.room.add("Tournament backend breaks specifications. Please report this to an admin.");
-			return;
-		}
-
-		from.isBusy = true;
-		to.isBusy = true;
-
+		player.ready = ready;
 		this.isAvailableMatchesInvalidated = true;
 		this.update();
-
-		const ready = await Ladders(this.fullFormat).prepBattle(output.connection, 'tour');
-		if (!ready) {
-			from.isBusy = false;
-			to.isBusy = false;
-
-			this.isAvailableMatchesInvalidated = true;
-			this.update();
-			return;
-		}
-
-		to.lastActionTime = Date.now();
-		from.pendingChallenge = {
-			to, team: ready.settings.team, hidden: ready.settings.hidden, inviteOnly: ready.settings.inviteOnly,
-		};
-		to.pendingChallenge = {
-			from, team: ready.settings.team, hidden: ready.settings.hidden, inviteOnly: ready.settings.inviteOnly,
-		};
-		from.sendRoom(`|tournament|update|${JSON.stringify({challenging: to.name})}`);
-		to.sendRoom(`|tournament|update|${JSON.stringify({challenged: from.name})}`);
-
-		this.isBracketInvalidated = true;
-		this.update();
 	}
-	cancelChallenge(user: User, output: Chat.CommandContext) {
-		if (!this.isTournamentStarted) {
-			if (output) output.sendReply('|tournament|error|NotStarted');
-			return;
-		}
 
-		if (!(user.id in this.playerTable)) {
-			if (output) output.sendReply('|tournament|error|UserNotAdded');
-			return;
-		}
-
+	cancelReady(user: User, output: Chat.CommandContext) {
 		const player = this.playerTable[user.id];
-		const challenge = player.pendingChallenge;
-		if (!challenge?.to) return;
-
-		player.isBusy = false;
-		challenge.to.isBusy = false;
-		player.pendingChallenge = null;
-		challenge.to.pendingChallenge = null;
-		user.sendTo(this.room, '|tournament|update|{"challenging":null}');
-		challenge.to.sendRoom('|tournament|update|{"challenged":null}');
-
-		this.isBracketInvalidated = true;
-		this.isAvailableMatchesInvalidated = true;
-		this.update();
-	}
-	async acceptChallenge(user: User, output: Chat.CommandContext) {
-		if (!this.isTournamentStarted) {
-			output.sendReply('|tournament|error|NotStarted');
-			return;
-		}
-
-		if (!(user.id in this.playerTable)) {
+		if (!player) {
 			output.sendReply('|tournament|error|UserNotAdded');
 			return;
 		}
-
-		const player = this.playerTable[user.id];
-		const challenge = player.pendingChallenge;
-		if (!challenge?.from) return;
-
-		const ready = await Ladders(this.fullFormat).prepBattle(output.connection, 'tour');
-		if (!ready) return;
-
-		// Prevent battles between offline users from starting
-		const from = Users.get(challenge.from.id);
-		if (!from?.connected || !user.connected) return;
-
-		// Prevent double accepts and users that have been disqualified while between these two functions
-		if (!challenge.from.pendingChallenge) return;
-		if (!player.pendingChallenge) return;
-
-		const room = Rooms.createBattle({
-			format: this.fullFormat,
-			isPrivate: this.room.settings.isPrivate,
-			players: [{
-				user: from,
-				team: challenge.team,
-				hidden: challenge.hidden,
-				inviteOnly: challenge.inviteOnly,
-			}, {
-				user,
-				team: ready.settings.team,
-				hidden: ready.settings.hidden,
-				inviteOnly: ready.settings.inviteOnly,
-			}],
-			rated: !Ladders.disabled && this.isRated,
-			challengeType: ready.challengeType,
-			tour: this,
-			parentid: this.roomid,
-		});
-
-		challenge.from.pendingChallenge = null;
-		player.pendingChallenge = null;
-		from.sendTo(this.room, '|tournament|update|{"challenging":null}');
-		user.sendTo(this.room, '|tournament|update|{"challenged":null}');
-
-		// server lockdown
-		if (!room) return;
-
-		challenge.from.inProgressMatch = {to: player, room};
-		this.room.add(`|tournament|battlestart|${from.name}|${user.name}|${room.roomid}`).update();
-
-		this.isBracketInvalidated = true;
-		if (this.autoDisqualifyTimeout !== Infinity) this.runAutoDisqualify();
-		if (this.forceTimer) room.game.startTimer();
+		this.clearReady(player);
 		this.update();
+	}
+
+	updateMatches() {
+		const matches = this.generator.getAvailableMatches();
+		if (typeof matches === 'string') throw new Error(`Error from getAvailableMatches(): ${matches}`);
+		// automatically assign matches as they become available
+		for (const match of matches) {
+			const [p1, p2] = match;
+			if (p1.pendingMatch || p2.pendingMatch || p1.isBusy || p2.isBusy) continue;
+			if (p1.isDisqualified || p2.isDisqualified || p1.isEliminated || p2.isEliminated) continue;
+			p1.pendingMatch = p2.pendingMatch = match;
+			p1.lastActionTime = p2.lastActionTime = Date.now();
+			p1.autoDisqualifyWarned = p2.autoDisqualifyWarned = false;
+		}
+		for (const player of this.players) {
+			const match = player.pendingMatch;
+			if (!match || match[0] !== player) continue;
+			const [p1, p2] = match;
+			if (p1.isBusy || p2.isBusy || !p1.ready || !p2.ready) continue;
+			const u1 = Users.getExact(p1.id);
+			const u2 = Users.getExact(p2.id);
+			if (!u1?.connected || !u2?.connected) continue;
+			for (const user of [u1, u2]) {
+				if (Punishments.isBattleBanned(user)) {
+					this.clearReady(this.playerTable[user.id]);
+					user.popup("You are barred from starting any new games until your battle ban expires.");
+				}
+			}
+			if (!p1.ready || !p2.ready) continue;
+
+			const ready1 = p1.ready;
+			const ready2 = p2.ready;
+			p1.isBusy = p2.isBusy = true;
+			this.clearReady(p1);
+			this.clearReady(p2);
+			const room = Rooms.createBattle({
+				format: this.fullFormat,
+				isPrivate: this.room.settings.isPrivate,
+				players: [{ user: u1, ...ready1.settings }, { user: u2, ...ready2.settings }],
+				rated: !Ladders.disabled && this.isRated,
+				challengeType: 'tour',
+				tour: this,
+				parentid: this.roomid,
+			});
+			// server lockdown can prevent battles from being created
+			if (!room) {
+				p1.isBusy = p2.isBusy = false;
+				continue;
+			}
+			this.clearMatch(p1);
+			p1.inProgressMatch = { to: p2, room };
+			this.room.add(`|tournament|battlestart|${u1.name}|${u2.name}|${room.roomid}`).update();
+			this.isBracketInvalidated = true;
+			if (this.forceTimer) room.game.startTimer();
+		}
 	}
 
 	getDefaultCustomName() {
 		return Dex.formats.get(this.fullFormat).name + " (with custom rules)";
 	}
-	forfeit(user: User) {
+	override forfeit(user: User) {
 		return this.disqualifyUser(user.id, null, "You left the tournament", true);
 	}
-	onConnect(user: User, connection: Connection) {
+	override onConnect(user: User, connection: Connection) {
 		this.updateFor(user, connection);
 	}
-	onUpdateConnection(user: User, connection: Connection) {
+	override onUpdateConnection(user: User, connection: Connection) {
 		this.updateFor(user, connection);
 	}
-	onRename(user: User, oldUserid: ID) {
+	override onLeave(user: User) {
+		const player = this.playerTable[user.id];
+		if (!player || (!player.ready && !player.readyRequest)) return;
+		this.clearReady(player);
+		this.update();
+	}
+	override onRename(user: User, oldUserid: ID) {
 		if (oldUserid in this.playerTable) {
+			this.clearReady(this.playerTable[oldUserid]);
 			this.renamePlayer(user, oldUserid);
+			this.update();
 		}
 
 		this.updateFor(user);
@@ -1101,12 +985,12 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 		if (user.can('makeroom')) return;
 		for (const otherPlayer of this.getRemainingPlayers()) {
 			const otherUser = Users.get(otherPlayer.id);
-			if (otherUser && otherUser.latestIp === user.latestIp) {
+			if (otherUser?.latestIp === user.latestIp) {
 				return "Scouting is banned: tournament players can't watch other tournament battles.";
 			}
 		}
 	}
-	onBattleWin(room: GameRoom, winnerid: ID) {
+	override onBattleWin(room: GameRoom, winnerid: ID) {
 		if (this.completedMatches.has(room.roomid)) return;
 		this.completedMatches.add(room.roomid);
 		room.setParent(null);
@@ -1155,7 +1039,7 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 			const error = this.generator.setMatchResult([p1, p2], result as 'win' | 'loss', score);
 			if (error) {
 				// Should never happen
-				return this.room.add(`Unexpected ${error} from setMatchResult([${room.p1.id}, ${room.p2.id}], ${result}, ${score}) in onBattleWin(${room.roomid}, ${winnerid}). Please report this to an admin.`).update();
+				return this.room.add(`Unexpected ${error} from setMatchResult([${room.p1.id}, ${room.p2.id}], ${result}, ${score.join(',')}) in onBattleWin(${room.roomid}, ${winnerid}). Please report this to an admin.`).update();
 			}
 		}
 		this.room.add(`|tournament|battleend|${p1.name}|${p2.name}|${result}|${score.join(',')}|success|${room.roomid}`);
@@ -1187,7 +1071,7 @@ export class Tournament extends Rooms.RoomGame<TournamentPlayer> {
 			if (!settings.recentTours) settings.recentTours = [];
 			const name = Dex.formats.get(this.name).exists ? Dex.formats.get(this.name).name :
 				`${this.name} (${Dex.formats.get(this.baseFormat).name})`;
-			settings.recentTours.unshift({name, baseFormat: this.baseFormat, time: Date.now()});
+			settings.recentTours.unshift({ name, baseFormat: this.baseFormat, time: Date.now() });
 			// Use a while loop here in case the threshold gets lowered with /tour settings recenttours
 			// to trim down multiple at once
 			while (settings.recentTours.length > settings.recentToursLength) {
@@ -1209,32 +1093,27 @@ function getGenerator(generator: string | undefined) {
 }
 
 function createTournamentGenerator(
-	generatorName: string | undefined, modifier: string | undefined, output: Chat.CommandContext
+	generatorName: string, modifier: string | undefined
 ) {
 	const TourGenerator = getGenerator(generatorName);
 	if (!TourGenerator) {
-		output.errorReply(`${generatorName} is not a valid type.`);
 		const generatorNames = Object.keys(TournamentGenerators).join(', ');
-		output.errorReply(`Valid types: ${generatorNames}`);
-		return;
+		throw new Chat.ErrorMessage([`${generatorName} is not a valid type.`, `Valid types: ${generatorNames}`]);
 	}
 	return new TourGenerator(modifier || '');
 }
 function createTournament(
-	room: Room, formatId: string | undefined, generator: string | undefined, playerCap: string | undefined,
+	room: Room, formatId: string | undefined, generator: string, playerCap: string | undefined,
 	isRated: boolean, generatorMod: string | undefined, name: string | undefined, output: Chat.CommandContext
 ) {
 	if (room.type !== 'chat') {
-		output.errorReply("Tournaments can only be created in chat rooms.");
-		return;
+		throw new Chat.ErrorMessage("Tournaments can only be created in chat rooms.");
 	}
 	if (room.game) {
-		output.errorReply(`You cannot have a tournament until the current room activity is over: ${room.game.title}`);
-		return;
+		throw new Chat.ErrorMessage(`You cannot have a tournament until the current room activity is over: ${room.game.title}`);
 	}
 	if (Rooms.global.lockdown) {
-		output.errorReply("The server is restarting soon, so a tournament cannot be created.");
-		return;
+		throw new Chat.ErrorMessage("The server is restarting soon, so a tournament cannot be created.");
 	}
 	const format = Dex.formats.get(formatId);
 	if (format.effectType !== 'Format' || !format.tournamentShow) {
@@ -1246,19 +1125,15 @@ function createTournament(
 	if (settings?.blockRecents && settings.recentTours && settings.recentToursLength) {
 		const recentTours = settings.recentTours.map(x => x.baseFormat);
 		if (recentTours.includes(format.id)) {
-			output.errorReply(`A ${format.name} tournament was made too recently.`);
-			return;
+			throw new Chat.ErrorMessage(`A ${format.name} tournament was made too recently.`);
 		}
 	}
 	if (!getGenerator(generator)) {
-		output.errorReply(`${generator} is not a valid type.`);
 		const generators = Object.keys(TournamentGenerators).join(', ');
-		output.errorReply(`Valid types: ${generators}`);
-		return;
+		throw new Chat.ErrorMessage([`${generator} is not a valid type.`, `Valid types: ${generators}`]);
 	}
 	if (playerCap && parseInt(playerCap) < 2) {
-		output.errorReply("You cannot have a player cap that is less than 2.");
-		return;
+		throw new Chat.ErrorMessage("You cannot have a player cap that is less than 2.");
 	}
 	if (name?.trim().length) {
 		if (output.checkChat(name) !== name) {
@@ -1271,7 +1146,7 @@ function createTournament(
 		if (name.includes('|')) throw new Chat.ErrorMessage("The tournament's name cannot include the | symbol.");
 	}
 	const tour = room.game = new Tournament(
-		room, format, createTournamentGenerator(generator, generatorMod, output)!, playerCap, isRated, name
+		room, format, createTournamentGenerator(generator, generatorMod), playerCap, isRated, name
 	);
 	if (settings) {
 		if (typeof settings.autostart === 'number') tour.setAutoStartTimeout(settings.autostart, output);
@@ -1280,6 +1155,7 @@ function createTournament(
 			if (settings.autostart === true) tour.setAutostartAtCap(true);
 		}
 		if (settings.autodq) tour.setAutoDisqualifyTimeout(settings.autodq, output);
+		if (settings.autoconfirmedOnly) tour.setAutoconfirmedOnly(true);
 		if (settings.forcePublic) tour.setForcePublic(true);
 		if (settings.forceTimer) tour.setForceTimer(true);
 		if (settings.allowModjoin === false) tour.setModjoin(false);
@@ -1301,7 +1177,7 @@ const commands: Chat.ChatCommands = {
 		}
 		// Shorten array if the recentToursLength gets adjusted
 		const array = room.settings.tournaments.recentTours;
-		const {name, time} = array[0];
+		const { name, time } = array[0];
 		let buf = `The last tournament ended ${Chat.toDurationString(Date.now() - time)} ago - ${name}`;
 		if (array.length > 1) {
 			buf += `<hr /><strong>Previous tournaments:</strong> `;
@@ -1316,19 +1192,47 @@ const commands: Chat.ChatCommands = {
 	tournaments: 'tournament',
 	tournament: {
 		''(target, room, user) {
-			room = this.requireRoom();
 			if (!this.runBroadcast()) return;
-			const update = [];
+			const roomTours = [];
 			for (const tourRoom of Rooms.rooms.values()) {
 				const tournament = tourRoom.getGame(Tournament);
 				if (!tournament) continue;
 				if (tourRoom.settings.isPrivate || tourRoom.settings.isPersonal || tourRoom.settings.staffRoom) continue;
-				update.push({
-					room: tourRoom.roomid, title: room.title, format: tournament.name,
-					generator: tournament.generator.name, isStarted: tournament.isTournamentStarted,
-				});
+				roomTours.push(tournament);
 			}
-			this.sendReply(`|tournaments|info|${JSON.stringify(update)}`);
+			if (!roomTours.length) {
+				throw new Chat.ErrorMessage(`No tournaments are currently running.`);
+			}
+			const started = Utils.sortBy(roomTours.filter(tour => tour.isTournamentStarted), tour => tour.room.roomid);
+			const signups = Utils.sortBy(roomTours.filter(tour => !tour.isTournamentStarted), tour => tour.room.roomid);
+
+			function renderLink(tour: Tournament) {
+				const name = Dex.formats.get(tour.name).exists ? Dex.formats.get(tour.name).name : tour.name;
+				const icon = tour.generator.name === 'Round Robin' ? '<i class="fa fa-th"></i>' :
+					tour.generator.name === 'Single Elimination' ? '<i class="fa fa-share-alt"></i>' :
+					'<i class="fa fa-share-alt"></i><i class="fa fa-share-alt"></i>';
+				const plural = tour.players.length !== 1 ? 's' : '';
+				return `<li><a href="/${tour.room.roomid}" class="blocklink">&laquo;<strong>${tour.room.roomid}</strong>&raquo;<small style="float:right">(${tour.players.length} player${plural})</small><br />${icon} <small>${Utils.escapeHTML(name)} ${tour.generator.name}</small></a></li>`;
+			}
+
+			let buf = ``;
+			if (signups.length) {
+				buf += `<strong>Accepting Signups:</strong><ul class="roomlist">`;
+				for (const tour of signups) {
+					buf += renderLink(tour);
+				}
+				buf += `</ul>`;
+			}
+			if (started.length) {
+				if (signups.length) buf += `<br />`;
+				buf += `<strong>Started:</strong><ul class="roomlist">`;
+				for (const tour of started) {
+					buf += renderLink(tour);
+				}
+				buf += `</ul>`;
+			}
+
+			this.sendReplyBox(buf);
 		},
 		help() {
 			return this.parse('/help tournament');
@@ -1352,14 +1256,18 @@ const commands: Chat.ChatCommands = {
 
 			const option = target.toLowerCase();
 			if (this.meansYes(option)) {
-				if (room.settings.tournaments?.announcements) return this.errorReply("Tournament announcements are already enabled.");
+				if (room.settings.tournaments?.announcements) {
+					throw new Chat.ErrorMessage("Tournament announcements are already enabled.");
+				}
 				if (!room.settings.tournaments) room.settings.tournaments = {};
 				room.settings.tournaments.announcements = true;
 				room.saveSettings();
 				this.privateModAction(`Tournament announcements were enabled by ${user.name}`);
 				this.modlog('TOUR ANNOUNCEMENTS', null, 'ON');
 			} else if (this.meansNo(option)) {
-				if (!room.settings.tournaments?.announcements) return this.errorReply("Tournament announcements are already disabled.");
+				if (!room.settings.tournaments?.announcements) {
+					throw new Chat.ErrorMessage("Tournament announcements are already disabled.");
+				}
 				if (!room.settings.tournaments) room.settings.tournaments = {};
 				room.settings.tournaments.announcements = false;
 				room.saveSettings();
@@ -1423,12 +1331,13 @@ const commands: Chat.ChatCommands = {
 			this.checkCan('gamemoderation', targetUser, room);
 
 			const targetUserid = targetUser ? targetUser.id : toID(userid);
-			if (!targetUser) return false;
 			if (reason?.length > MAX_REASON_LENGTH) {
-				return this.errorReply(`The reason is too long. It cannot exceed ${MAX_REASON_LENGTH} characters.`);
+				throw new Chat.ErrorMessage(`The reason is too long. It cannot exceed ${MAX_REASON_LENGTH} characters.`);
 			}
 
-			if (Tournament.checkBanned(room, targetUser)) return this.errorReply("This user is already banned from tournaments.");
+			if (Tournament.checkBanned(room, targetUser || targetUserid)) {
+				throw new Chat.ErrorMessage("This user is already banned from tournaments.");
+			}
 
 			const punishment = {
 				type: 'TOURBAN',
@@ -1443,7 +1352,7 @@ const commands: Chat.ChatCommands = {
 			}
 			room.getGame(Tournament)?.removeBannedUser(targetUserid);
 
-			this.modlog('TOURBAN', targetUser, reason);
+			this.modlog('TOURBAN', targetUser || targetUserid, reason);
 			this.privateModAction(
 				`${targetUser ? targetUser.name : targetUserid} was banned from joining tournaments by ${user.name}. (${reason})`
 			);
@@ -1459,13 +1368,15 @@ const commands: Chat.ChatCommands = {
 
 			const targetUserid = toID(targetUser || toID(target));
 
-			if (!Tournament.checkBanned(room, targetUserid)) return this.errorReply("This user isn't banned from tournaments.");
+			if (!Tournament.checkBanned(room, targetUserid)) {
+				throw new Chat.ErrorMessage("This user isn't banned from tournaments.");
+			}
 
 			if (targetUser) {
 				Punishments.roomUnpunish(room, targetUserid, 'TOURBAN', false);
 			}
 			this.privateModAction(`${targetUser ? targetUser.name : targetUserid} was unbanned from joining tournaments by ${user.name}.`);
-			this.modlog('TOUR UNBAN', targetUser, null, {noip: 1, noalts: 1});
+			this.modlog('TOUR UNBAN', targetUser, null, { noip: 1, noalts: 1 });
 		},
 		j: 'join',
 		in: 'join',
@@ -1483,7 +1394,7 @@ const commands: Chat.ChatCommands = {
 				if (tournament.getRemainingPlayers().some(player => player.id === user.id)) {
 					tournament.disqualifyUser(user.id, this, null, true);
 				} else {
-					this.errorReply("You have already been eliminated from this tournament.");
+					throw new Chat.ErrorMessage("You have already been eliminated from this tournament.");
 				}
 			} else {
 				tournament.removeUser(user.id, this);
@@ -1493,7 +1404,7 @@ const commands: Chat.ChatCommands = {
 			if (!this.runBroadcast()) return;
 			room = this.requireRoom();
 			const tournament = this.requireGame(Tournament);
-			const users = usersToNames(tournament.getRemainingPlayers().sort());
+			const users = usersToNames(Utils.sortBy(tournament.getRemainingPlayers(), player => player.id));
 			this.sendReplyBox(
 				`<strong>${users.length}/${tournament.players.length}` +
 				Utils.html` users remain in this tournament:</strong><br />${users.join(', ')}`
@@ -1505,23 +1416,19 @@ const commands: Chat.ChatCommands = {
 			tournament.updateFor(user);
 			this.sendReply("Your tournament bracket has been updated.");
 		},
-		challenge(target, room, user, connection, cmd) {
+		challenge: 'ready',
+		acceptchallenge: 'ready',
+		ready(target, room, user) {
 			room = this.requireRoom();
 			const tournament = this.requireGame(Tournament);
-			if (!target) {
-				return this.sendReply(`Usage: /tour ${cmd} <user>`);
-			}
-			void tournament.challenge(user, toID(target), this);
+			return tournament.ready(user, this);
 		},
-		cancelchallenge(target, room, user) {
+		cancelchallenge: 'cancelready',
+		unready: 'cancelready',
+		cancelready(target, room, user) {
 			room = this.requireRoom();
 			const tournament = this.requireGame(Tournament);
-			tournament.cancelChallenge(user, this);
-		},
-		acceptchallenge(target, room, user) {
-			room = this.requireRoom();
-			const tournament = this.requireGame(Tournament);
-			void tournament.acceptChallenge(user, this);
+			tournament.cancelReady(user, this);
 		},
 		async vtm(target, room, user, connection) {
 			room = this.requireRoom();
@@ -1547,7 +1454,7 @@ const commands: Chat.ChatCommands = {
 			const tournament = this.requireGame(Tournament);
 			if (!this.runBroadcast()) return;
 			if (tournament.customRules.length < 1) {
-				return this.errorReply("The tournament does not have any custom rules.");
+				throw new Chat.ErrorMessage("The tournament does not have any custom rules.");
 			}
 			this.sendReply(`|html|<div class='infobox infobox-limited'>This tournament includes:<br />${tournament.getCustomRules()}</div>`);
 		},
@@ -1560,7 +1467,7 @@ const commands: Chat.ChatCommands = {
 			}
 			const [generatorType, cap, modifier] = target.split(',').map(item => item.trim());
 			const playerCap = parseInt(cap);
-			const generator = createTournamentGenerator(generatorType, modifier, this);
+			const generator = createTournamentGenerator(generatorType, modifier);
 			if (generator && tournament.setGenerator(generator, this)) {
 				if (playerCap && playerCap >= 2) {
 					tournament.playerCap = playerCap;
@@ -1572,9 +1479,9 @@ const commands: Chat.ChatCommands = {
 					tournament.playerCap = 0;
 					room.send(`|tournament|update|{"playerCap": "${playerCap}"}`);
 				}
-				const capNote = (tournament.playerCap ? ' with a player cap of ' + tournament.playerCap : '');
+				const capNote = (tournament.playerCap ? ` with a player cap of ${tournament.playerCap}` : '');
 				this.privateModAction(`${user.name} set tournament type to ${generator.name}${capNote}.`);
-				this.modlog('TOUR SETTYPE', null, generator.name + capNote);
+				this.modlog('TOUR SETTYPE', null, `${generator.name}${capNote}`);
 				this.sendReply(`Tournament set to ${generator.name}${capNote}.`);
 			}
 		},
@@ -1594,11 +1501,11 @@ const commands: Chat.ChatCommands = {
 				}
 			}
 			if (tournament.isTournamentStarted) {
-				return this.errorReply("The player cap cannot be changed once the tournament has started.");
+				throw new Chat.ErrorMessage("The player cap cannot be changed once the tournament has started.");
 			}
 			const option = target.toLowerCase();
 			if (['0', 'infinity', 'off', 'false', 'stop', 'remove'].includes(option)) {
-				if (!tournament.playerCap) return this.errorReply("The tournament does not have a player cap.");
+				if (!tournament.playerCap) throw new Chat.ErrorMessage("The tournament does not have a player cap.");
 				target = '0';
 			}
 			const playerCap = parseInt(target);
@@ -1609,10 +1516,10 @@ const commands: Chat.ChatCommands = {
 				this.sendReply("Tournament cap removed.");
 			} else {
 				if (isNaN(playerCap) || playerCap < 2) {
-					return this.errorReply("The tournament cannot have a player cap less than 2.");
+					throw new Chat.ErrorMessage("The tournament cannot have a player cap less than 2.");
 				}
 				if (playerCap === tournament.playerCap) {
-					return this.errorReply(`The tournament's player cap is already ${playerCap}.`);
+					throw new Chat.ErrorMessage(`The tournament's player cap is already ${playerCap}.`);
 				}
 				tournament.playerCap = playerCap;
 				if (Config.tourdefaultplayercap && tournament.playerCap > Config.tourdefaultplayercap) {
@@ -1641,20 +1548,20 @@ const commands: Chat.ChatCommands = {
 			room = this.requireRoom();
 			const tournament = this.requireGame(Tournament);
 			if (cmd === 'banlist') {
-				return this.errorReply('The new syntax is: /tour rules -bannedthing, +un[banned|restricted]thing, *restrictedthing, !removedrule, addedrule');
+				throw new Chat.ErrorMessage('The new syntax is: /tour rules -bannedthing, +un[banned|restricted]thing, *restrictedthing, !removedrule, addedrule');
 			}
 			if (!target) {
 				this.sendReply("Usage: /tour rules <list of rules>");
 				this.sendReply("Rules can be: -bannedthing, +un[banned|restricted]thing, *restrictedthing, !removedrule, addedrule");
 				this.parse('/tour viewrules');
 				if (tournament.customRules.length) {
-					return this.sendReplyBox(`<details><summary>Source</summary><code style="white-space: pre-wrap; display: table; tab-size: 3">/tour rules ${tournament.customRules}</code></details>`);
+					return this.sendReplyBox(`<details><summary>Source</summary><code style="white-space: pre-wrap; display: table; tab-size: 3">/tour rules ${tournament.customRules.join(',')}</code></details>`);
 				}
 				return;
 			}
 			this.checkCan('tournaments', null, room);
 			if (tournament.isTournamentStarted) {
-				return this.errorReply("The custom rules cannot be changed once the tournament has started.");
+				throw new Chat.ErrorMessage("The custom rules cannot be changed once the tournament has started.");
 			}
 			if (tournament.setCustomRules(target)) {
 				room.addRaw(
@@ -1662,7 +1569,7 @@ const commands: Chat.ChatCommands = {
 				);
 				this.privateModAction(`${user.name} updated the tournament's custom rules.`);
 				this.modlog('TOUR RULES', null, tournament.customRules.join(', '));
-				this.sendReplyBox(`<details><summary>Source</summary><code style="white-space: pre-wrap; display: table; tab-size: 3">/tour rules ${tournament.customRules}</code></details>`);
+				this.sendReplyBox(`<details><summary>Source</summary><code style="white-space: pre-wrap; display: table; tab-size: 3">/tour rules ${tournament.customRules.join(',')}</code></details>`);
 			}
 		},
 		clearruleset: 'clearcustomrules',
@@ -1673,16 +1580,16 @@ const commands: Chat.ChatCommands = {
 			this.checkCan('tournaments', null, room);
 			const tournament = this.requireGame(Tournament);
 			if (tournament.isTournamentStarted) {
-				return this.errorReply("The custom rules cannot be changed once the tournament has started.");
+				throw new Chat.ErrorMessage("The custom rules cannot be changed once the tournament has started.");
 			}
 			if (tournament.customRules.length < 1) {
-				return this.errorReply("The tournament does not have any custom rules.");
+				throw new Chat.ErrorMessage("The tournament does not have any custom rules.");
 			}
 			tournament.customRules = [];
 			tournament.fullFormat = tournament.baseFormat;
 			if (tournament.name === tournament.getDefaultCustomName()) {
-				tournament.name = tournament.baseFormat;
-				room.send(`|tournament|update|${JSON.stringify({format: tournament.name})}`);
+				tournament.name = Dex.formats.get(tournament.baseFormat).name;
+				room.send(`|tournament|update|${JSON.stringify({ format: tournament.name })}`);
 				tournament.update();
 			}
 			room.addRaw(`<b>The tournament's custom rules were cleared.</b>`);
@@ -1703,11 +1610,11 @@ const commands: Chat.ChatCommands = {
 			if (!name || typeof name !== 'string') return;
 
 			if (name.length > MAX_CUSTOM_NAME_LENGTH) {
-				return this.errorReply(`The tournament's name cannot exceed ${MAX_CUSTOM_NAME_LENGTH} characters.`);
+				throw new Chat.ErrorMessage(`The tournament's name cannot exceed ${MAX_CUSTOM_NAME_LENGTH} characters.`);
 			}
-			if (name.includes('|')) return this.errorReply("The tournament's name cannot include the | symbol.");
+			if (name.includes('|')) throw new Chat.ErrorMessage("The tournament's name cannot include the | symbol.");
 			tournament.name = name;
-			room.send(`|tournament|update|${JSON.stringify({format: tournament.name})}`);
+			room.send(`|tournament|update|${JSON.stringify({ format: tournament.name })}`);
 			this.privateModAction(`${user.name} set the tournament's name to ${tournament.name}.`);
 			this.modlog('TOUR NAME', null, tournament.name);
 			tournament.update();
@@ -1717,9 +1624,9 @@ const commands: Chat.ChatCommands = {
 			room = this.requireRoom();
 			this.checkCan('tournaments', null, room);
 			const tournament = this.requireGame(Tournament);
-			if (tournament.name === tournament.baseFormat) return this.errorReply("The tournament does not have a name.");
-			tournament.name = tournament.baseFormat;
-			room.send(`|tournament|update|${JSON.stringify({format: tournament.name})}`);
+			if (tournament.name === tournament.baseFormat) throw new Chat.ErrorMessage("The tournament does not have a name.");
+			tournament.name = Dex.formats.get(tournament.baseFormat).name;
+			room.send(`|tournament|update|${JSON.stringify({ format: tournament.name })}`);
 			this.privateModAction(`${user.name} cleared the tournament's name.`);
 			this.modlog('TOUR CLEARNAME');
 			tournament.update();
@@ -1745,7 +1652,7 @@ const commands: Chat.ChatCommands = {
 			const targetUser = Users.get(userid);
 			const targetUserid = toID(targetUser || userid);
 			if (reason?.length > MAX_REASON_LENGTH) {
-				return this.errorReply(`The reason is too long. It cannot exceed ${MAX_REASON_LENGTH} characters.`);
+				throw new Chat.ErrorMessage(`The reason is too long. It cannot exceed ${MAX_REASON_LENGTH} characters.`);
 			}
 			if (tournament.disqualifyUser(targetUserid, this, reason)) {
 				this.privateModAction(`${(targetUser ? targetUser.name : targetUserid)} was disqualified from the tournament by ${user.name}${(reason ? ' (' + reason + ')' : '')}`);
@@ -1757,9 +1664,11 @@ const commands: Chat.ChatCommands = {
 			room = this.requireRoom();
 			this.checkCan('tournaments', null, room);
 			const tournament = this.requireGame(Tournament);
-			const [oldUser, newUser] = target.split(',').map(item => Users.get(item.trim()));
-			if (!oldUser) return this.errorReply(`User ${oldUser} not found.`);
-			if (!newUser) return this.errorReply(`User ${newUser} not found.`);
+			const [oldName, newName = ''] = target.split(',').map(item => item.trim());
+			const oldUser = Users.get(oldName);
+			const newUser = Users.get(newName);
+			if (!oldUser) throw new Chat.ErrorMessage(`User ${oldName} not found.`);
+			if (!newUser) throw new Chat.ErrorMessage(`User ${newName} not found.`);
 
 			tournament.replaceUser(oldUser, newUser, this);
 		},
@@ -1775,12 +1684,12 @@ const commands: Chat.ChatCommands = {
 			const option = target.toLowerCase();
 			if ((this.meansYes(option) && option !== '1') || option === 'start') {
 				if (tournament.isTournamentStarted) {
-					return this.errorReply("The tournament has already started.");
+					throw new Chat.ErrorMessage("The tournament has already started.");
 				} else if (!tournament.playerCap) {
-					return this.errorReply("The tournament does not have a player cap set.");
+					throw new Chat.ErrorMessage("The tournament does not have a player cap set.");
 				} else {
 					if (tournament.autostartcap) {
-						return this.errorReply("The tournament is already set to autostart when the player cap is reached.");
+						throw new Chat.ErrorMessage("The tournament is already set to autostart when the player cap is reached.");
 					}
 					tournament.setAutostartAtCap(true);
 					this.privateModAction(`The tournament was set to autostart when the player cap is reached by ${user.name}`);
@@ -1789,14 +1698,14 @@ const commands: Chat.ChatCommands = {
 			} else {
 				if (option === '0' || option === 'infinity' || this.meansNo(option) || option === 'stop' || option === 'remove') {
 					if (!tournament.autostartcap && tournament.autoStartTimeout === Infinity) {
-						return this.errorReply("The automatic tournament start timer is already off.");
+						throw new Chat.ErrorMessage("The automatic tournament start timer is already off.");
 					}
 					target = 'off';
 					tournament.autostartcap = false;
 				}
 				const timeout = target.toLowerCase() === 'off' ? Infinity : Number(target) * 60 * 1000;
 				if (timeout <= 0 || (timeout !== Infinity && timeout > Chat.MAX_TIMEOUT_DURATION)) {
-					return this.errorReply(`The automatic tournament start timer must be set to a positive number.`);
+					throw new Chat.ErrorMessage(`The automatic tournament start timer must be set to a positive number.`);
 				}
 				if (tournament.setAutoStartTimeout(timeout, this)) {
 					this.privateModAction(`The tournament auto start timer was set to ${target} by ${user.name}`);
@@ -1820,10 +1729,10 @@ const commands: Chat.ChatCommands = {
 			if (target.toLowerCase() === 'infinity' || target === '0') target = 'off';
 			const timeout = target.toLowerCase() === 'off' ? Infinity : Number(target) * 60 * 1000;
 			if (timeout <= 0 || (timeout !== Infinity && timeout > Chat.MAX_TIMEOUT_DURATION)) {
-				return this.errorReply(`The automatic disqualification timer must be set to a positive number.`);
+				throw new Chat.ErrorMessage(`The automatic disqualification timer must be set to a positive number.`);
 			}
 			if (timeout === tournament.autoDisqualifyTimeout) {
-				return this.errorReply(`The automatic tournament disqualify timer is already set to ${target} minute(s).`);
+				throw new Chat.ErrorMessage(`The automatic tournament disqualify timer is already set to ${target} minute(s).`);
 			}
 			if (tournament.setAutoDisqualifyTimeout(timeout, this)) {
 				this.privateModAction(`The tournament auto disqualify timer was set to ${target} by ${user.name}`);
@@ -1835,7 +1744,7 @@ const commands: Chat.ChatCommands = {
 			this.checkCan('tournaments', null, room);
 			const tournament = this.requireGame(Tournament);
 			if (tournament.autoDisqualifyTimeout === Infinity) {
-				return this.errorReply("The automatic tournament disqualify timer is not set.");
+				throw new Chat.ErrorMessage("The automatic tournament disqualify timer is not set.");
 			}
 			tournament.runAutoDisqualify(this);
 			this.roomlog(`${user.name} used /tour runautodq`);
@@ -1858,12 +1767,12 @@ const commands: Chat.ChatCommands = {
 
 			const option = target.toLowerCase();
 			if (this.meansYes(option) || option === 'allow' || option === 'allowed') {
-				if (tournament.allowScouting) return this.errorReply("Scouting for this tournament is already set to allowed.");
+				if (tournament.allowScouting) throw new Chat.ErrorMessage("Scouting for this tournament is already set to allowed.");
 				tournament.setScouting(true);
 				this.privateModAction(`The tournament was set to allow scouting by ${user.name}`);
 				this.modlog('TOUR SCOUT', null, 'allow');
 			} else if (this.meansNo(option) || option === 'disallow' || option === 'disallowed') {
-				if (!tournament.allowScouting) return this.errorReply("Scouting for this tournament is already disabled.");
+				if (!tournament.allowScouting) throw new Chat.ErrorMessage("Scouting for this tournament is already disabled.");
 				tournament.setScouting(false);
 				this.privateModAction(`The tournament was set to disallow scouting by ${user.name}`);
 				this.modlog('TOUR SCOUT', null, 'disallow');
@@ -1887,12 +1796,12 @@ const commands: Chat.ChatCommands = {
 
 			const option = target.toLowerCase();
 			if (this.meansYes(option) || option === 'allowed') {
-				if (tournament.allowModjoin) return this.errorReply("Modjoining is already allowed for this tournament.");
+				if (tournament.allowModjoin) throw new Chat.ErrorMessage("Modjoining is already allowed for this tournament.");
 				tournament.setModjoin(true);
 				this.privateModAction(`The tournament was set to allow modjoin by ${user.name}`);
 				this.modlog('TOUR MODJOIN', null, option);
 			} else if (this.meansNo(option) || option === 'disallowed') {
-				if (!tournament.allowModjoin) return this.errorReply("Modjoining is already not allowed for this tournament.");
+				if (!tournament.allowModjoin) throw new Chat.ErrorMessage("Modjoining is already not allowed for this tournament.");
 				tournament.setModjoin(false);
 				this.privateModAction(`The tournament was set to disallow modjoin by ${user.name}`);
 				this.modlog('TOUR MODJOIN', null, option);
@@ -1919,7 +1828,7 @@ const commands: Chat.ChatCommands = {
 				return this.parse(`/help tour`);
 			}
 			if (tournament.autoconfirmedOnly === value) {
-				return this.errorReply(`This tournament is already set to ${value ? 'disallow' : 'allow'} non-autoconfirmed users.`);
+				throw new Chat.ErrorMessage(`This tournament is already set to ${value ? 'disallow' : 'allow'} non-autoconfirmed users.`);
 			}
 			tournament.setAutoconfirmedOnly(value);
 			this.privateModAction(`${user.name} set this tournament to ${value ? 'disallow' : 'allow'} non-autoconfirmed users.`);
@@ -2036,7 +1945,7 @@ const commands: Chat.ChatCommands = {
 				const value = this.meansYes(target) ? true : this.meansNo(target) ? false : null;
 				if (!target || value === null) return this.parse(`/help tour settings`);
 				if (room.settings.tournaments.autoconfirmedOnly === value) {
-					return this.errorReply(`All tournaments are already set to ${value ? 'disallow' : 'allow'} non-autoconfimed users.`);
+					throw new Chat.ErrorMessage(`All tournaments are already set to ${value ? 'disallow' : 'allow'} non-autoconfimed users.`);
 				}
 				room.settings.tournaments.autoconfirmedOnly = value;
 				room.saveSettings();
@@ -2305,12 +2214,14 @@ const commands: Chat.ChatCommands = {
 				`<code>/tour settings scouting &lt;on|off></code> - Specifies whether users can spectate other participants for every tournament.<br />` +
 				`<code>/tour settings recenttours &lt;number|off|forcedelete></code> - Specifies the amount of recent tournaments to list in /recenttours.<br />` +
 				`<code>/tour settings blockrecents &lt;on|off></code> - Toggles blocking tours in /recenttours from being made.<br />` +
-				`Requires: # &`,
+				`Requires: # ~`,
 			);
 		}
 
 		this.sendReplyBox(
 			`Tournament Commands<br/>` +
+			`- ready: Readies your team for your next battle, even if no match is available yet.<br />` +
+			`- cancelready/unready: Cancels readiness before your battle starts.<br />` +
 			`- create/new &lt;format>, &lt;type>, [ &lt;comma-separated arguments>]: Creates a new tournament in the current room.<br />` +
 			`- rules &lt;comma-separated arguments>: Sets the custom rules for the tournament before it has started. <a href="view-battlerules">Custom rules help/list</a><br />` +
 			`- end/stop/delete: Forcibly ends the tournament in the current room.<br />` +

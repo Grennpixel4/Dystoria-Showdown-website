@@ -7,9 +7,10 @@
 
 import * as https from 'https';
 import * as http from 'http';
-import * as url from 'url';
 import * as Streams from './streams';
-declare const Config: any;
+
+// Net is also used without the server's global declarations.
+declare const global: { Config?: { noNetRequests?: boolean } };
 
 export interface PostData {
 	[key: string]: string | number;
@@ -18,6 +19,7 @@ export interface NetRequestOptions extends https.RequestOptions {
 	body?: string | PostData;
 	writable?: boolean;
 	query?: PostData;
+	headers?: http.OutgoingHttpHeaders & NodeJS.Dict<unknown>; // Node 22 lets headers be readonly string[]
 }
 
 export class HttpError extends Error {
@@ -76,7 +78,7 @@ export class NetStream extends Streams.ReadWriteStream {
 			}
 		}
 
-		const protocol = url.parse(this.uri).protocol as string;
+		const protocol = new URL(this.uri).protocol;
 		const net = protocol === 'https:' ? https : http;
 
 		let resolveResponse: ((value: http.IncomingMessage | null) => void) | null;
@@ -97,6 +99,9 @@ export class NetStream extends Streams.ReadWriteStream {
 
 			response.on('data', data => {
 				this.push(data);
+			});
+			response.on('error', error => {
+				if (!this.atEOF) this.pushError(error, true);
 			});
 			response.on('end', () => {
 				if (this.state === 'open') this.state = 'success';
@@ -143,11 +148,11 @@ export class NetStream extends Streams.ReadWriteStream {
 		let out = '';
 		for (const key in data) {
 			if (out) out += `&`;
-			out += `${key}=${encodeURIComponent('' + data[key])}`;
+			out += `${key}=${encodeURIComponent(`${data[key]}`)}`;
 		}
 		return out;
 	}
-	_write(data: string | Buffer): Promise<void> | void {
+	override _write(data: string | Buffer): Promise<void> | void {
 		if (!this.nodeWritableStream) {
 			throw new Error("You must specify opts.writable to write to a request.");
 		}
@@ -163,10 +168,10 @@ export class NetStream extends Streams.ReadWriteStream {
 			this.drainListeners.push(resolve);
 		});
 	}
-	_read() {
+	override _read() {
 		this.nodeReadableStream?.resume();
 	}
-	_pause() {
+	override _pause() {
 		this.nodeReadableStream?.pause();
 	}
 }
@@ -186,7 +191,7 @@ export class NetRequest {
 	 * @param body POST body
 	 */
 	getStream(opts: NetRequestOptions = {}) {
-		if (typeof Config !== 'undefined' && Config.noNetRequests) {
+		if (global.Config?.noNetRequests) {
 			throw new Error(`Net requests are disabled.`);
 		}
 		const stream = new NetStream(this.uri, opts);

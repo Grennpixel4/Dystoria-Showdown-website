@@ -13,7 +13,8 @@
  * @license MIT
  */
 
-import {FS, Utils} from '../lib';
+import { FS, Utils } from '../lib';
+import type { LadderUpdate } from './ladders';
 
 // ladderCaches = {formatid: ladder OR Promise(ladder)}
 // Use Ladders(formatid).ladder to guarantee a Promise(ladder).
@@ -53,13 +54,11 @@ export class LadderStore {
 		// ladderCaches[formatid]
 		const cachedLadder = ladderCaches.get(this.formatid);
 		if (cachedLadder) {
-			// @ts-ignore
-			if (cachedLadder.then) {
+			if ((cachedLadder as Promise<LadderRow[]>).then) {
 				const ladder = await cachedLadder;
 				return (this.ladder = ladder);
 			}
-			// @ts-ignore
-			return (this.ladder = cachedLadder);
+			return (this.ladder = cachedLadder as LadderRow[]);
 		}
 		try {
 			const data = await FS('config/ladders/' + this.formatid + '.tsv').readIfExists();
@@ -128,7 +127,7 @@ export class LadderStore {
 	 * ladder toplist, to be displayed directly in the ladder tab of the
 	 * client.
 	 */
-	async getTop(prefix?: string) {
+	async getTop(prefix?: string): Promise<[string, string]> {
 		const formatid = this.formatid;
 		const name = Dex.formats.get(formatid).name;
 		const ladder = await this.getLadder();
@@ -159,7 +158,7 @@ export class LadderStore {
 		if (index >= 0) {
 			rating = ladder[index][1];
 		}
-		if (user && user.id === userid) {
+		if (user?.id === userid) {
 			user.mmrCache[formatid] = rating;
 		}
 		return rating;
@@ -181,14 +180,14 @@ export class LadderStore {
 		} else {
 			row[5]++; // tie
 		}
-		row[6] = '' + new Date();
+		row[6] = `${new Date()}`;
 	}
 
 	/**
 	 * Update the Elo rating for two players after a battle, and display
 	 * the results in the passed room.
 	 */
-	async updateRating(p1name: string, p2name: string, p1score: number, room: AnyObject) {
+	async updateRating(p1name: string, p2name: string, p1score: number, room: AnyObject): Promise<LadderUpdate> {
 		if (Ladders.disabled) {
 			room.addRaw(`Ratings not updated. The ladders are currently disabled.`).update();
 			return [p1score, null, null];
@@ -259,13 +258,13 @@ export class LadderStore {
 				return [p1score, null, null];
 			}
 
-			let reasons = '' + (Math.round(p1newElo) - Math.round(p1elo)) + ' for ' + (p1score > 0.9 ? 'winning' : (p1score < 0.1 ? 'losing' : 'tying'));
+			let reasons = `${Math.round(p1newElo) - Math.round(p1elo)} for ${p1score > 0.9 ? 'winning' : (p1score < 0.1 ? 'losing' : 'tying')}`;
 			if (!reasons.startsWith('-')) reasons = '+' + reasons;
 			room.addRaw(
 				Utils.html`${p1name}'s rating: ${Math.round(p1elo)} &rarr; <strong>${Math.round(p1newElo)}</strong><br />(${reasons})`
 			);
 
-			reasons = '' + (Math.round(p2newElo) - Math.round(p2elo)) + ' for ' + (p2score > 0.9 ? 'winning' : (p2score < 0.1 ? 'losing' : 'tying'));
+			reasons = `${Math.round(p2newElo) - Math.round(p2elo)} for ${p2score > 0.9 ? 'winning' : (p2score < 0.1 ? 'losing' : 'tying')}`;
 			if (!reasons.startsWith('-')) reasons = '+' + reasons;
 			room.addRaw(
 				Utils.html`${p2name}'s rating: ${Math.round(p2elo)} &rarr; <strong>${Math.round(p2newElo)}</strong><br />(${reasons})`
@@ -279,7 +278,11 @@ export class LadderStore {
 			room.update();
 		}
 
-		return [p1score, p1newElo, p2newElo];
+		return [
+			p1score,
+			p1newElo === undefined ? null : { elo: p1newElo },
+			p2newElo === undefined ? null : { elo: p2newElo },
+		];
 	}
 
 	/**
@@ -301,7 +304,7 @@ export class LadderStore {
 	/**
 	 * Calculates Elo based on a match result
 	 */
-	 calculateElo(oldElo: number, score: number, foeElo: number): number {
+	calculateElo(oldElo: number, score: number, foeElo: number): number {
 		// The K factor determines how much your Elo changes when you win or
 		// lose games. Larger K means more change.
 		// In the "original" Elo, K is constant, but it's common for K to
@@ -322,7 +325,7 @@ export class LadderStore {
 		}
 
 		// main Elo formula
-		const E = 1 / (1 + Math.pow(10, (foeElo - oldElo) / 400));
+		const E = 1 / (1 + 10 ** ((foeElo - oldElo) / 400));
 
 		const newElo = oldElo + K * (score - E);
 

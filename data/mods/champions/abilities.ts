@@ -5,30 +5,14 @@ export const Abilities: import('../../../sim/dex-abilities').ModdedAbilityDataTa
 			this.effectState.checkedAngerShell = !(effect.effectType === "Move" && !effect.multihit);
 		},
 	},
+	auraguard: {
+		inherit: true,
+		isNonstandard: null,
+	},
 	berserk: {
 		inherit: true,
 		onDamage(damage, target, source, effect) {
 			this.effectState.checkedBerserk = !(effect.effectType === "Move" && !effect.multihit);
-		},
-	},
-	disguise: {
-		inherit: true,
-		onEffectiveness(typeMod, target, type, move) {
-			if (!target || move.category === 'Status') return;
-
-			if (move.hit === 1) delete this.effectState.neutral;
-			if (this.effectState.neutral) return 0;
-
-			if (!['mimikyu', 'mimikyutotem'].includes(target.species.id)) {
-				return;
-			}
-
-			const hitSub = target.volatiles['substitute'] && !move.flags['bypasssub'] && !(move.infiltrates && this.gen >= 6);
-			if (hitSub) return;
-
-			if (!target.runImmunity(move.type)) return;
-			this.effectState.neutral = true;
-			return 0;
 		},
 	},
 	dragonize: {
@@ -38,6 +22,15 @@ export const Abilities: import('../../../sim/dex-abilities').ModdedAbilityDataTa
 	eelevate: {
 		inherit: true,
 		isNonstandard: null,
+	},
+	emergencyexit: {
+		inherit: true,
+		onEmergencyExit(originalHp, target) {
+			if (!target.hp || target.hp > target.maxhp / 2 || originalHp <= target.maxhp / 2) return;
+			if (!this.canSwitch(target.side) || target.forceSwitchFlag || target.switchFlag) return;
+			target.switchFlag = true;
+			this.add('-activate', target, 'ability: Emergency Exit');
+		},
 	},
 	firemane: {
 		inherit: true,
@@ -53,8 +46,6 @@ export const Abilities: import('../../../sim/dex-abilities').ModdedAbilityDataTa
 				}
 			}
 		},
-		desc: "50% chance this Pokemon's ally has its non-volatile status condition cured at the end of each turn.",
-		shortDesc: "50% chance this Pokemon's ally has its status cured at the end of each turn.",
 	},
 	megasol: {
 		inherit: true,
@@ -92,14 +83,13 @@ export const Abilities: import('../../../sim/dex-abilities').ModdedAbilityDataTa
 		onMaybeTrapPokemon(pokemon) {
 			pokemon.maybeTrapped = false;
 		},
-		shortDesc: "This pokemon may switch out regardless of trapping moves and/or abilities.",
-		desc: "This pokemon may switch out regardless of trapping moves and/or abilities.",
 	},
 	spicyspray: {
 		inherit: true,
 		isNonstandard: null,
 	},
 	unseenfist: {
+		inherit: true,
 		onModifyMove: undefined, // no inherit
 		onHitProtect(source, target, move) {
 			if (move.flags['contact']) {
@@ -107,7 +97,14 @@ export const Abilities: import('../../../sim/dex-abilities').ModdedAbilityDataTa
 				return false;
 			}
 		},
+	},
+	wimpout: {
 		inherit: true,
-		shortDesc: "This Pokemon's contact moves ignore a target's protection and deal 1/4 the usual damage.",
+		onEmergencyExit(originalHp, target) {
+			if (!target.hp || target.hp > target.maxhp / 2 || originalHp <= target.maxhp / 2) return;
+			if (!this.canSwitch(target.side) || target.forceSwitchFlag || target.switchFlag) return;
+			target.switchFlag = true;
+			this.add('-activate', target, 'ability: Wimp Out');
+		},
 	},
 };

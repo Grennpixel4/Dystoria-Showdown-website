@@ -13,11 +13,31 @@ export const Scripts: ModdedBattleScriptsData = {
 			}
 		}
 	},
+	checkFainted() {
+		// Gen 3 can request replacements while other switches are still queued
+		const queuedSwitchOuts = this.queue.getSwitches().map(action => action.pokemon);
+		const candidatesBySide = this.sides
+			.filter(side => this.canSwitch(side))
+			.map(side => side.active.filter(pokemon => pokemon.fainted && !queuedSwitchOuts.includes(pokemon)))
+			.filter(candidates => candidates.length);
+
+		// Gen 3 requests replacements one at a time when only one side has fainted pokemon
+		const onePerSide = candidatesBySide.length === 1;
+		for (const candidates of candidatesBySide) {
+			for (const pokemon of candidates) {
+				pokemon.status = 'fnt' as ID;
+				pokemon.switchFlag = true;
+				if (onePerSide) break;
+			}
+		}
+	},
 	pokemon: {
 		inherit: true,
 		getActionSpeed() {
 			let speed = this.getStat('spe', false, false);
-			if (this.battle.field.getPseudoWeather('trickroom')) {
+			const trickRoomCheck = this.battle.ruleTable.has('twisteddimensionmod') ?
+				!this.battle.field.getPseudoWeather('trickroom') : this.battle.field.getPseudoWeather('trickroom');
+			if (trickRoomCheck) {
 				speed = -speed;
 			}
 			if (this.battle.quickClawRoll && this.hasItem('quickclaw')) {
@@ -47,13 +67,13 @@ export const Scripts: ModdedBattleScriptsData = {
 			// In Generation 3, the spread move modifier is 0.5x instead of 0.75x. Moves that hit both foes
 			// and the user's ally, like Earthquake and Explosion, don't get affected by spread modifiers
 			if (move.spreadHit && move.target === 'allAdjacentFoes') {
-				const spreadModifier = move.spreadModifier || 0.5;
-				this.battle.debug('Spread modifier: ' + spreadModifier);
+				const spreadModifier = 0.5;
+				this.battle.debug(`Spread modifier: ${spreadModifier}`);
 				baseDamage = this.battle.modify(baseDamage, spreadModifier);
 			}
 
 			// Weather
-			baseDamage = this.battle.runEvent('WeatherModifyDamage', pokemon, target, move, baseDamage);
+			baseDamage = this.battle.priorityEvent('WeatherModifyDamage', pokemon, target, move, baseDamage);
 
 			if (move.category === 'Physical' && !Math.floor(baseDamage)) {
 				baseDamage = 1;
@@ -115,9 +135,11 @@ export const Scripts: ModdedBattleScriptsData = {
 
 			return Math.floor(baseDamage);
 		},
-		useMoveInner(moveOrMoveName, pokemon, target, sourceEffect, zMove) {
+		useMoveInner(moveOrMoveName, pokemon, options) {
+			let sourceEffect = options?.sourceEffect;
+			let target = options?.target;
 			if (!sourceEffect && this.battle.effect.id) sourceEffect = this.battle.effect;
-			if (sourceEffect && sourceEffect.id === 'instruct') sourceEffect = null;
+			if (sourceEffect?.id === 'instruct') sourceEffect = null;
 
 			let move = this.dex.getActiveMove(moveOrMoveName);
 			pokemon.lastMoveUsed = move;
@@ -158,8 +180,8 @@ export const Scripts: ModdedBattleScriptsData = {
 
 			let movename = move.name;
 			if (move.id === 'hiddenpower') movename = 'Hidden Power';
-			if (sourceEffect) attrs += `|[from]${this.dex.conditions.get(sourceEffect)}`;
-			this.battle.addMove('move', pokemon, movename, target + attrs);
+			if (sourceEffect) attrs += `|[from] ${this.dex.conditions.get(sourceEffect).name}`;
+			this.battle.addMove('move', pokemon, movename, `${target!}${attrs}`);
 
 			if (!target) {
 				this.battle.attrLastMove('[notarget]');
@@ -167,9 +189,10 @@ export const Scripts: ModdedBattleScriptsData = {
 				return false;
 			}
 
-			const {targets, pressureTargets} = pokemon.getMoveTargets(move, target);
+			const { targets, pressureTargets } = pokemon.getMoveTargets(move, target);
 
-			if (!sourceEffect || sourceEffect.id === 'pursuit') {
+			const callerMoveForPressure = sourceEffect && (sourceEffect as ActiveMove).pp ? sourceEffect as ActiveMove : null;
+			if (!sourceEffect || callerMoveForPressure) {
 				let extraPP = 0;
 				for (const source of pressureTargets) {
 					const ppDrop = this.battle.runEvent('DeductPP', source, pokemon, move);
@@ -178,13 +201,12 @@ export const Scripts: ModdedBattleScriptsData = {
 					}
 				}
 				if (extraPP > 0) {
-					pokemon.deductPP(move, extraPP);
+					pokemon.deductPP(callerMoveForPressure || move, extraPP);
 				}
 			}
 
 			if (!this.battle.singleEvent('TryMove', move, null, pokemon, target, move) ||
 				!this.battle.runEvent('TryMove', pokemon, target, move)) {
-				move.mindBlownRecoil = false;
 				return false;
 			}
 
@@ -252,7 +274,7 @@ export const Scripts: ModdedBattleScriptsData = {
 				return false;
 			}
 
-			if (!move.negateSecondary && !(move.hasSheerForce && pokemon.hasAbility('sheerforce'))) {
+			if (!this.battle.suppressingSecondaries()) {
 				this.battle.singleEvent('AfterMoveSecondarySelf', move, null, pokemon, target, move);
 				this.battle.runEvent('AfterMoveSecondarySelf', pokemon, target, move);
 			}
@@ -304,10 +326,7 @@ export const Scripts: ModdedBattleScriptsData = {
 				move.ignoreImmunity = (move.category === 'Status');
 			}
 
-			if (
-				(!move.ignoreImmunity || (move.ignoreImmunity !== true && !move.ignoreImmunity[move.type])) &&
-				!target.runImmunity(move.type)
-			) {
+			if (!target.runImmunity(move)) {
 				naturalImmunity = true;
 			} else {
 				hitResult = this.battle.singleEvent('TryImmunity', move, {}, target, pokemon, move);
@@ -324,7 +343,7 @@ export const Scripts: ModdedBattleScriptsData = {
 			let boost: number;
 			if (accuracy !== true) {
 				if (!move.ignoreAccuracy) {
-					boosts = this.battle.runEvent('ModifyBoost', pokemon, null, null, {...pokemon.boosts});
+					boosts = this.battle.runEvent('ModifyBoost', pokemon, null, null, { ...pokemon.boosts });
 					boost = this.battle.clampIntRange(boosts['accuracy'], -6, 6);
 					if (boost > 0) {
 						accuracy *= boostTable[boost];
@@ -333,7 +352,7 @@ export const Scripts: ModdedBattleScriptsData = {
 					}
 				}
 				if (!move.ignoreEvasion) {
-					boosts = this.battle.runEvent('ModifyBoost', target, null, null, {...target.boosts});
+					boosts = this.battle.runEvent('ModifyBoost', target, null, null, { ...target.boosts });
 					boost = this.battle.clampIntRange(boosts['evasion'], -6, 6);
 					if (boost > 0) {
 						accuracy /= boostTable[boost];
@@ -408,12 +427,13 @@ export const Scripts: ModdedBattleScriptsData = {
 				for (i = 0; i < hits && target.hp && pokemon.hp; i++) {
 					if (pokemon.status === 'slp' && !isSleepUsable) break;
 					move.hit = i + 1;
+					move.lastHit = move.hit === hits;
 
 					if (move.multiaccuracy && i > 0) {
 						accuracy = move.accuracy;
 						if (accuracy !== true) {
 							if (!move.ignoreAccuracy) {
-								boosts = this.battle.runEvent('ModifyBoost', pokemon, null, null, {...pokemon.boosts});
+								boosts = this.battle.runEvent('ModifyBoost', pokemon, null, null, { ...pokemon.boosts });
 								boost = this.battle.clampIntRange(boosts['accuracy'], -6, 6);
 								if (boost > 0) {
 									accuracy *= boostTable[boost];
@@ -422,7 +442,7 @@ export const Scripts: ModdedBattleScriptsData = {
 								}
 							}
 							if (!move.ignoreEvasion) {
-								boosts = this.battle.runEvent('ModifyBoost', target, null, null, {...target.boosts});
+								boosts = this.battle.runEvent('ModifyBoost', target, null, null, { ...target.boosts });
 								boost = this.battle.clampIntRange(boosts['evasion'], -6, 6);
 								if (boost > 0) {
 									accuracy /= boostTable[boost];
@@ -455,8 +475,8 @@ export const Scripts: ModdedBattleScriptsData = {
 				move.totalDamage = damage;
 			}
 
-			if (move.recoil && move.totalDamage) {
-				this.battle.damage(this.calcRecoilDamage(move.totalDamage, move, pokemon), pokemon, target, 'recoil');
+			if (move.totalDamage) {
+				this.applyRecoilDamage(move.totalDamage, move, pokemon);
 			}
 
 			if (target && pokemon !== target) target.gotAttacked(move, damage, pokemon);
@@ -467,16 +487,12 @@ export const Scripts: ModdedBattleScriptsData = {
 
 			this.battle.eachEvent('Update');
 
-			if (target && !move.negateSecondary) {
+			if (target) {
 				this.battle.singleEvent('AfterMoveSecondary', move, null, target, pokemon, move);
 				this.battle.runEvent('AfterMoveSecondary', target, pokemon, move);
 			}
 
 			return damage;
-		},
-
-		calcRecoilDamage(damageDealt, move) {
-			return this.battle.clampIntRange(Math.floor(damageDealt * move.recoil![0] / move.recoil![1]), 1);
 		},
 	},
 };

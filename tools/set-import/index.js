@@ -22,7 +22,7 @@
 const child_process = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const shell = cmd => child_process.execSync(cmd, {stdio: 'inherit', cwd: path.resolve(__dirname, '../..')});
+const shell = cmd => child_process.execSync(cmd, { stdio: 'inherit', cwd: path.resolve(__dirname, '../..') });
 shell('node build');
 
 function missing(dep) {
@@ -84,7 +84,7 @@ const SETS = path.resolve(__dirname, 'sets');
 			} else {
 				version = `${major}.${minor}.${Number(patch) + 1}`;
 			}
-		} catch (err) {
+		} catch {
 			console.error("Version required to create '@smogon/sets' package");
 			process.exit(1);
 		}
@@ -92,7 +92,7 @@ const SETS = path.resolve(__dirname, 'sets');
 
 	const packagejson = {
 		"name": "@smogon/sets",
-		"version": version,
+		version,
 		"description": "Set data imported from Smogon.com and used on Pokémon Showdown",
 		"main": "index.js",
 		"unpkg": "index.js",
@@ -123,7 +123,7 @@ const SETS = path.resolve(__dirname, 'sets');
 		'	return Promise.resolve(require(path));',
 		'}',
 		'function forGen(gen) {',
-		// eslint-disable-next-line no-template-curly-in-string
+		// oxlint-disable-next-line no-template-curly-in-string
 		'	return JSON[`gen${typeof gen === "number" ? gen : gen.num}`];',
 		'}',
 		'exports.forGen = forGen;',

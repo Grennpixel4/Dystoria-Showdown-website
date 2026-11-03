@@ -1,4 +1,4 @@
-import {RandomTeams, MoveCounter} from "../gen9/teams";
+import { RandomTeams, type MoveCounter } from "../gen9/teams";
 
 /** Pokemon who should never be in the lead slot */
 const NO_LEAD_POKEMON = [
@@ -7,7 +7,7 @@ const NO_LEAD_POKEMON = [
 
 export class RandomCAPTeams extends RandomTeams {
 	getCAPAbility(
-		types: string[],
+		types: Set<string>,
 		moves: Set<string>,
 		abilities: string[],
 		counter: MoveCounter,
@@ -26,7 +26,7 @@ export class RandomCAPTeams extends RandomTeams {
 
 	getCAPPriorityItem(
 		ability: string,
-		types: string[],
+		types: Set<string>,
 		moves: Set<string>,
 		counter: MoveCounter,
 		teamDetails: RandomTeamsTypes.TeamDetails,
@@ -38,7 +38,7 @@ export class RandomCAPTeams extends RandomTeams {
 		if (ability === 'Mountaineer') return 'Life Orb';
 	}
 
-	getLevel(
+	override getLevel(
 		species: Species,
 		isDoubles: boolean,
 	): number {
@@ -85,14 +85,14 @@ export class RandomCAPTeams extends RandomTeams {
 		let ability = '';
 		let item = undefined;
 
-		const evs = {hp: 85, atk: 85, def: 85, spa: 85, spd: 85, spe: 85};
-		const ivs = {hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31};
+		const evs = { hp: 85, atk: 85, def: 85, spa: 85, spd: 85, spe: 85 };
+		const ivs = { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 };
 
-		const types = species.types;
+		const types = new Set(species.types);
 		const abilities = set.abilities!;
 
 		// Get moves
-		const moves = this.randomMoveset(types, abilities, teamDetails, species, isLead, isDoubles, movePool, teraType!, role);
+		const moves = this.randomMoveset(types, abilities, teamDetails, species, isLead, movePool, teraType!, role, isDoubles);
 		const counter = this.queryMoves(moves, species, teraType!, abilities);
 
 		// Get ability
@@ -102,7 +102,7 @@ export class RandomCAPTeams extends RandomTeams {
 		// First, the priority items
 		item = this.getCAPPriorityItem(ability, types, moves, counter, teamDetails, species, isLead, teraType!, role);
 		if (item === undefined) {
-			item = this.getPriorityItem(ability, types, moves, counter, teamDetails, species, isLead, isDoubles, teraType!, role);
+			item = this.getPriorityItem(ability, types, moves, counter, teamDetails, species, isLead, teraType!, role, isDoubles);
 		}
 		if (item === undefined) {
 			item = this.getItem(ability, types, moves, counter, teamDetails, species, isLead, teraType!, role);
@@ -148,7 +148,10 @@ export class RandomCAPTeams extends RandomTeams {
 			) return false;
 			return move.category !== 'Physical' || move.id === 'bodypress' || move.id === 'foulplay';
 		});
-		if (noAttackStatMoves && !moves.has('transform') && this.format.mod !== 'partnersincrime') {
+		if (
+			noAttackStatMoves && !moves.has('transform') && this.format.mod !== 'partnersincrime' &&
+			!ruleTable.has('forceofthefallenmod')
+		) {
 			evs.atk = 0;
 			ivs.atk = 0;
 		}
@@ -180,12 +183,12 @@ export class RandomCAPTeams extends RandomTeams {
 		};
 	}
 
-	randomCAPSets: {[species: string]: RandomTeamsTypes.RandomSpeciesData} = require('./sets.json');
+	randomCAPSets: { [species: string]: RandomTeamsTypes.RandomSpeciesData } = require('./sets.json');
 
-	randomTeam() {
+	override randomTeam() {
 		this.enforceNoDirectCustomBanlistChanges();
 
-		const seed = this.prng.seed;
+		const seed = this.prng.getSeed();
 		const ruleTable = this.dex.formats.getRuleTable(this.format);
 		const pokemon: RandomTeamsTypes.RandomSet[] = [];
 
@@ -195,12 +198,12 @@ export class RandomCAPTeams extends RandomTeams {
 		const typePool = this.dex.types.names().filter(name => name !== "Stellar");
 		const type = this.forceMonotype || this.sample(typePool);
 
-		const baseFormes: {[k: string]: number} = {};
+		const baseFormes: { [k: string]: number } = {};
 
-		const typeCount: {[k: string]: number} = {};
-		const typeComboCount: {[k: string]: number} = {};
-		const typeWeaknesses: {[k: string]: number} = {};
-		const typeDoubleWeaknesses: {[k: string]: number} = {};
+		const typeCount: { [k: string]: number } = {};
+		const typeComboCount: { [k: string]: number } = {};
+		const typeWeaknesses: { [k: string]: number } = {};
+		const typeDoubleWeaknesses: { [k: string]: number } = {};
 		const teamDetails: RandomTeamsTypes.TeamDetails = {};
 		let numMaxLevelPokemon = 0;
 
@@ -211,6 +214,7 @@ export class RandomCAPTeams extends RandomTeams {
 		const [capPokemonPool, capBaseSpeciesPool] = this.getPokemonPool(type, pokemon, isMonotype, capPokemonList);
 
 		let leadsRemaining = 1;
+		if (ruleTable.has('pickedteamsize') || ruleTable.has('teampreview')) leadsRemaining = 0;
 		while (baseSpeciesPool.length && pokemon.length < this.maxTeamSize) {
 			let baseSpecies, species;
 			// Always generate a CAP Pokemon in slot 2; other slots can randomly generate CAP Pokemon.
@@ -265,7 +269,7 @@ export class RandomCAPTeams extends RandomTeams {
 					}
 					if (this.dex.getEffectiveness(typeName, species) > 1) {
 						if (!typeDoubleWeaknesses[typeName]) typeDoubleWeaknesses[typeName] = 0;
-						if (typeDoubleWeaknesses[typeName] >= 1 * limitFactor) {
+						if (typeDoubleWeaknesses[typeName] >= limitFactor) {
 							skip = true;
 							break;
 						}

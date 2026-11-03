@@ -12,7 +12,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 				pokemon.addVolatile('confusion');
 			}
 		},
-		rating: 1,
 	},
 	belueberry: {
 		inherit: true,
@@ -43,7 +42,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 				pokemon.addVolatile('confusion');
 			}
 		},
-		rating: 1,
 	},
 	heavyball: {
 		inherit: true,
@@ -62,7 +60,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 				pokemon.addVolatile('confusion');
 			}
 		},
-		rating: 1,
 	},
 	jabocaberry: {
 		inherit: true,
@@ -90,10 +87,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		inherit: true,
 		isNonstandard: "Unobtainable",
 	},
-	lumberry: {
-		inherit: true,
-		rating: 3,
-	},
 	lureball: {
 		inherit: true,
 		isNonstandard: "Unobtainable",
@@ -115,7 +108,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 				pokemon.addVolatile('confusion');
 			}
 		},
-		rating: 1,
 	},
 	magostberry: {
 		inherit: true,
@@ -167,17 +159,13 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 			}
 		},
 	},
-	sitrusberry: {
-		inherit: true,
-		rating: 3,
-	},
 	spelonberry: {
 		inherit: true,
 		isNonstandard: null,
 	},
 	souldew: {
 		inherit: true,
-		onBasePower() {},
+		onBasePower: undefined, // no inherit
 		onModifySpAPriority: 1,
 		onModifySpA(spa, pokemon) {
 			if (pokemon.baseSpecies.num === 380 || pokemon.baseSpecies.num === 381) {
@@ -212,6 +200,5 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 				pokemon.addVolatile('confusion');
 			}
 		},
-		rating: 1,
 	},
 };

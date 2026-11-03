@@ -219,7 +219,7 @@ export const Pokedex: import('../../../sim/dex-species').ModdedSpeciesDataTable 
 		inherit: true,
 		unreleasedHidden: true,
 	},
-	lillpup: {
+	lillipup: {
 		inherit: true,
 		unreleasedHidden: true,
 	},
@@ -383,7 +383,7 @@ export const Pokedex: import('../../../sim/dex-species').ModdedSpeciesDataTable 
 		inherit: true,
 		unreleasedHidden: true,
 	},
-	lillgant: {
+	lilligant: {
 		inherit: true,
 		unreleasedHidden: true,
 	},
@@ -394,6 +394,7 @@ export const Pokedex: import('../../../sim/dex-species').ModdedSpeciesDataTable 
 	basculinbluestriped: {
 		inherit: true,
 		unreleasedHidden: true,
+		abilities: { 0: "Reckless", 1: "Adaptability", H: "Mold Breaker", S: "Rock Head" },
 	},
 	sandile: {
 		inherit: true,

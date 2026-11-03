@@ -7,14 +7,16 @@ Pokémon Showdown is implemented in SockJS. SockJS is a compatibility
 layer over raw WebSocket, so you can actually connect to Pokémon
 Showdown directly using WebSocket:
 
-    ws://sim.smogon.com:8000/showdown/websocket
-      or
     wss://sim3.psim.us/showdown/websocket
+      or
+    ws://sim3.psim.us:8000/showdown/websocket
 
 Client implementations you might want to look at for reference include:
 
 - Majeur's android client (Kotlin/Java) -
     https://github.com/MajeurAndroid/Android-Unofficial-Showdown-Client
+- pickdenis' chat bot (Ruby) -
+    https://github.com/pickdenis/ps-chatbot
 - Quinella and TalkTakesTime's chat bot (Node.js) -
     https://github.com/TalkTakesTime/Pokemon-Showdown-Bot
 - Nixola's chat bot (Lua) -
@@ -38,7 +40,7 @@ Messages from the user to the server are in the form:
 
 `ROOMID` can optionally be left blank if unneeded (commands like `/join lobby`
 can be sent anywhere). Responses will be sent to a PM box with no username
-(so `|/command` is equivalent to `|/pm &, /command`).
+(so `|/command` is equivalent to `|/pm ~, /command`).
 
 `TEXT` can contain newlines, in which case it'll be treated the same
 way as if each line were sent to the room separately.
@@ -142,7 +144,7 @@ represented by a space), and the rest of the string being their username.
 
 `|uhtml|NAME|HTML`
 
-> We recieved an HTML message (NAME) that can change what it's displaying,
+> We received an HTML message (NAME) that can change what it's displaying,
 > this is used in things like our Polls system, for example.
 
 `|uhtmlchange|NAME|HTML`
@@ -303,20 +305,22 @@ represented by a space), and the rest of the string being their username.
 `|tournament|update|JSON`
 
 > `JSON` is a JSON object representing the changes in the tournament
-> since the last update you recieved or the start of the tournament.
+> since the last update you received or the start of the tournament.
 > These include:
->
-    format: the tournament's custom name or the format being used
-    teambuilderFormat: the format being used; sent if a custom name was set
-    isStarted: whether or not the tournament has started
-    isJoined: whether or not you have joined the tournament
-    generator: the type of bracket being used by the tournament
-    playerCap: the player cap that was set or 0 if it was removed
-    bracketData: an object representing the current state of the bracket
-    challenges: a list of opponents that you can currently challenge
-    challengeBys: a list of opponents that can currently challenge you
-    challenged: the name of the opponent that has challenged you
-    challenging: the name of the opponent that you are challenging
+
+- `format`: the tournament's custom name or the format being used
+- `teambuilderFormat`: the format being used; sent if a custom name was set
+- `isStarted`: whether or not the tournament has started
+- `isJoined`: whether or not you have joined the tournament
+- `generator`: the type of bracket being used by the tournament
+- `playerCap`: the player cap that was set or 0 if it was removed
+- `bracketData`: an object representing the current state of the bracket
+- `challenges`: (unused) previously a list of opponents you can challenge
+- `challengeBys`: (unused) previously a list of opponents that can challenge you
+- `challenged`: (before readying) the the opponent you will be matched with, or 
+  `"(next available player)"` if you are still waiting for a pairing
+- `challenging`: (after readying) the the opponent that will be matched with, or
+  `"(next available player)"` if you are still waiting for a pairing
 
 `|tournament|updateEnd`
 
@@ -476,7 +480,9 @@ If the challenge is accepted, you will receive a room initialization message.
 `JSON.searching` will be an array of format IDs you're currently searching for
 games in.
 
-`JSON.games` will be a `{roomid: title}` table of games you're currently in.
+`JSON.games` will be a `{roomid: title}` table of games you're currently in,
+or `null` if you're in no games.
+
 Note that this includes ALL games, so `|updatesearch|` will be sent when you
 start/end challenge battles, and even non-Pokémon games like Mafia.
 

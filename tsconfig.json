@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "lib": ["es2020"],
+        "lib": ["ESNext"],
         "noEmit": true,
         "jsx": "react",
         "jsxFactory": "Chat.h",
@@ -8,25 +8,27 @@
         "target": "es2020",
         "skipLibCheck": true,
         "module": "CommonJS",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
+        "types": ["node"],
         "strict": true,
         "allowJs": true,
         "checkJs": true,
+        "forceConsistentCasingInFileNames": true,
         "incremental": true,
         "allowUnreachableCode": false,
         "esModuleInterop": true,
-        "noImplicitOverride": false,
+        "noImplicitOverride": true,
         "useDefineForClassFields": false
     },
-    "types": ["node"],
     "exclude": [
-        "./.*-dist/**/*",
+        "/Applications/Visual Studio Code.app/Contents/Resources/app/extensions/node_modules/typescript/lib/lib.dom.d.ts",
+        "./dist/**/*",
         "./server/chat-plugins/private/*/*.d.ts"
     ],
     "include": [
         "./config/*.ts",
         "./data/*",
-        "./data/text/*",
+        "./data/text/**/*",
         "./data/random-battles/**/*",
         "./data/mods/*/*",
         "./dev-tools/*.ts",

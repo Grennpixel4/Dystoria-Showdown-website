@@ -52,8 +52,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 	belch: {
 		inherit: true,
 		onDisableMove: undefined, // no inherit
-		desc: "Fails unless the user has eaten a Berry, either by eating one that was held, stealing and eating one off another Pokemon with Bug Bite or Pluck, or eating one that was thrown at it with Fling. Once the condition is met, this move can be selected and used for the rest of the battle even if the user gains or uses another item or switches out. Consuming a Berry with Natural Gift does not count for the purposes of eating one.",
-		shortDesc: "Fails unless the user has eaten a Berry.",
 	},
 	behemothbash: {
 		inherit: true,
@@ -164,6 +162,38 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 		inherit: true,
 		isNonstandard: "Past",
 	},
+	curse: {
+		inherit: true,
+		volatileStatus: undefined, // no inherit
+		onModifyMove(move, source, target) {
+			this.debug('Curse onModifyMove triggered', source, target);
+			if (!source.hasType('Ghost')) {
+				move.target = 'self';
+			} else if (!target || (source !== target && source.isAlly(target))) {
+				move.target = 'randomNormal';
+			}
+		},
+		onTryHit(target, source, move) {
+			this.debug('Curse onTryHit triggered', target, source);
+			if (source.hasType('Ghost') && target.volatiles['curse']) {
+				return false;
+			}
+		},
+		onHit(target, source) {
+			this.debug('Curse onHit triggered', source, target);
+			if (!source.hasType('Ghost')) {
+				return !!this.boost({ spe: -1, atk: 1, def: 1 }, source, source);
+			}
+			this.directDamage(source.maxhp / 2, source, source);
+			if (source.isAlly(target)) {
+				const random = this.getRandomTarget(source, 'Curse');
+				if (!random) return false;
+				target = random;
+			}
+			delete target.volatiles['curse'];
+			target.addVolatile('curse');
+		},
+	},
 	cut: {
 		inherit: true,
 		isNonstandard: "Past",
@@ -191,20 +221,9 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 			chance: 30,
 			onHit(target, source) {
 				const status = this.sample(['psn', 'par', 'slp']);
-				// This seems to only happen with Dire Claw
-				if (target.status) {
-					if (target.status === status) {
-						this.add('-fail', target, status);
-					} else {
-						this.add('-fail', target);
-					}
-					return;
-				}
 				target.trySetStatus(status, source);
 			},
 		},
-		desc: "Has a 30% chance to cause the target to either fall asleep, become poisoned, or become paralyzed.",
-		shortDesc: "30% chance to sleep, poison, or paralyze target.",
 	},
 	disable: {
 		inherit: true,
@@ -290,8 +309,7 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 	encore: {
 		inherit: true,
 		condition: {
-			duration: 3,
-			noCopy: true, // doesn't get copied by Z-Baton Pass
+			inherit: true,
 			onStart(target) {
 				let move: Move | ActiveMove | null = target.lastMove;
 				if (!move || target.volatiles['dynamax']) return false;
@@ -308,45 +326,16 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 				const action = this.queue.willMove(target);
 				if (!action) {
 					this.effectState.duration!++;
-					// TODO: this is a quick fix, check if move priority is changed when Mental Herb cures Encore
 				} else if (action.moveid !== move.id && !target.hasItem('mentalherb')) {
-					const priority = action.priority -
-						this.dex.moves.get(action.moveid).priority +
-						this.dex.moves.get(move.id).priority;
 					this.queue.changeAction(target, {
 						choice: 'move',
 						// target: undefined,
 						// targetLoc: undefined,
 						moveid: move.id,
-						order: action.order,
 					});
-					this.queue.willMove(target)!.priority = priority;
 				}
 			},
-			onOverrideAction(pokemon, target, move) {
-				if (move.id !== this.effectState.move) return this.effectState.move;
-			},
-			onResidualOrder: 16,
-			onResidual(target) {
-				if (!target.moves.includes(this.effectState.move) ||
-					target.moveSlots[target.moves.indexOf(this.effectState.move)].pp <= 0) {
-					// early termination if you run out of PP
-					target.removeVolatile('encore');
-				}
-			},
-			onEnd(target) {
-				this.add('-end', target, 'Encore');
-			},
-			onDisableMove(pokemon) {
-				if (!this.effectState.move || !pokemon.hasMove(this.effectState.move)) {
-					return;
-				}
-				for (const moveSlot of pokemon.moveSlots) {
-					if (moveSlot.id !== this.effectState.move) {
-						pokemon.disableMove(moveSlot.id);
-					}
-				}
-			},
+			onOverrideAction: undefined, // no inherit
 		},
 	},
 	esperwing: {
@@ -364,7 +353,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 				pokemon.disableMove('fakeout');
 			}
 		},
-		desc: "Has a 100% chance to make the target flinch. This move cannot be selected unless it is the user's first turn on the field.",
 	},
 	falsesurrender: {
 		inherit: true,
@@ -398,7 +386,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 				pokemon.disableMove('firstimpression');
 			}
 		},
-		desc: "This move cannot be selected unless it is the user's first turn on the field.",
 	},
 	fishiousrend: {
 		inherit: true,
@@ -423,8 +410,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 	freezedry: {
 		inherit: true,
 		secondary: undefined, // no inherit
-		desc: "This move's type effectiveness against Water is changed to be super effective no matter what this move's type is.",
-		shortDesc: "Super effective on Water.",
 	},
 	freezeshock: {
 		inherit: true,
@@ -558,8 +543,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 			chance: 20,
 			volatileStatus: 'flinch',
 		},
-		desc: "Has a 20% chance to make the target flinch.",
-		shortDesc: "20% chance to make the target flinch.",
 	},
 	ivycudgel: {
 		inherit: true,
@@ -626,8 +609,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 				spa: -2,
 			},
 		},
-		desc: "Lowers the user's Special Attack by 2 stages.",
-		shortDesc: "Lowers the user's Sp. Atk by 2. Hits foe(s).",
 	},
 	malignantchain: {
 		inherit: true,
@@ -650,7 +631,7 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 		inherit: true,
 		basePower: 170,
 		isNonstandard: null,
-    },
+	},
 	metronome: {
 		inherit: true,
 		isNonstandard: "Past",
@@ -683,8 +664,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 				spa: -1,
 			},
 		},
-		desc: "Has a 10% chance to lower the target's Special Attack by 1 stage.",
-		shortDesc: "10% chance to lower the target's Sp. Atk by 1.",
 	},
 	moongeistbeam: {
 		inherit: true,
@@ -705,11 +684,19 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 	nightslash: {
 		inherit: true,
 		pp: 20,
-		noPPBoosts: true,
 	},
 	nihillight: {
 		inherit: true,
 		pp: 5,
+	},
+	noretreat: {
+		inherit: true,
+		condition: {
+			onStart(pokemon) {
+				if (!pokemon.addVolatile('trapped')) return;
+				this.add('-start', pokemon, 'move: No Retreat');
+			},
+		},
 	},
 	noxioustorque: {
 		inherit: true,
@@ -810,8 +797,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 	ragefist: {
 		inherit: true,
 		// Hit counter reset is implemented in Pokemon#clearVolatile
-		desc: "Power is equal to 50+(X*50), where X is the total number of times the user has been hit by a damaging attack during the battle, even if the user did not lose HP from the attack. X cannot be greater than 6 and resets to 0 when the user leaves the field. Each hit of a multi-hit attack is counted, but confusion damage is not counted.",
-		shortDesc: "+50 BP/hit on user. Max 6 hits. Resets on switch-out.",
 	},
 	razorleaf: {
 		inherit: true,
@@ -862,8 +847,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 				this.damage(pokemon.baseMaxhp / (pokemon.hasType(['Water', 'Steel']) ? 8 : 16));
 			},
 		},
-		desc: "Causes damage to the target equal to 1/16 of its maximum HP (1/8 if the target is Steel or Water type), rounded down, at the end of each turn during effect. This effect ends when the target is no longer active.",
-		shortDesc: "Deals 1/16 max HP each turn; 1/8 on Steel, Water.",
 	},
 	sandattack: {
 		inherit: true,
@@ -1006,8 +989,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 	stuffcheeks: {
 		inherit: true,
 		onDisableMove: undefined, // no inherit
-		desc: "Fails if the user is not holding a Berry. The user eats its Berry and raises its Defense by 2 stages. This effect is not prevented by the Klutz or Unnerve Abilities, or the effects of Embargo or Magic Room.",
-		shortDesc: "Fails unless the user has a berry. User eats Berry, Def +2.",
 	},
 	sunsteelstrike: {
 		inherit: true,
@@ -1090,8 +1071,6 @@ export const Moves: import('../../../sim/dex-moves').ModdedMoveDataTable = {
 		boosts: {
 			spe: -2,
 		},
-		desc: "Lowers the target's Speed by 2 stages and poisons it.",
-		shortDesc: "Lowers the target's Speed by 2 and poisons it.",
 	},
 	trickortreat: {
 		inherit: true,

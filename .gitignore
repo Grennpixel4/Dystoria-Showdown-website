@@ -1,6 +1,6 @@
 /config/*
 !/config/formats.ts
-!/config/official-formats.ts
+!/config/config-example.js
 /logs/**/*
 /test/modlogs
 /test/replays/*.html
@@ -26,6 +26,7 @@ tools/modlog/converter.js
 !test/**/*.js
 tools/modlog/**/*.js
 tools/set-import/*.js
+!tools/set-import/index.js
 
 # visual studio live share
 .vs
@@ -72,5 +73,3 @@ local_settings.py
 pip-log.txt
 # redis dumps
 *.rdb
-config/chatrooms.json
-logs/errors.txt

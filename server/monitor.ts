@@ -7,11 +7,15 @@
  * @license MIT
  */
 
-import {exec, ExecException, ExecOptions} from 'child_process';
-import {crashlogger, FS} from "../lib";
+import { exec, type ExecException, type ExecOptions } from 'child_process';
+import { crashlogger, FS } from "../lib";
 import * as pathModule from 'path';
 
 const MONITOR_CLEAN_TIMEOUT = 2 * 60 * 60 * 1000;
+
+export type LogLevel = 'debug' | 'notice' | 'warning' | 'error';
+
+export type LogEntry = [LogLevel, string];
 
 /**
  * This counts the number of times an action has been committed, and tracks the
@@ -47,7 +51,7 @@ export class TimedCounter extends Map<string, [number, number]> {
 // (4 is currently unused)
 // 5 = supposedly completely silent, but for now a lot of PS output doesn't respect loglevel
 if (('Config' in global) &&
-		(typeof Config.loglevel !== 'number' || Config.loglevel < 0 || Config.loglevel > 5)) {
+	(typeof Config.loglevel !== 'number' || Config.loglevel < 0 || Config.loglevel > 5)) {
 	Config.loglevel = 2;
 }
 
@@ -58,14 +62,16 @@ export const Monitor = new class {
 	battlePreps = new TimedCounter();
 	groupChats = new TimedCounter();
 	tickets = new TimedCounter();
+	deprecationsWarned = new Set();
 
 	activeIp: string | null = null;
-	networkUse: {[k: string]: number} = {};
-	networkCount: {[k: string]: number} = {};
-	hotpatchLock: {[k: string]: {by: string, reason: string}} = {};
+	networkUse: { [k: string]: number } = {};
+	networkCount: { [k: string]: number } = {};
+	hotpatchLock: { [k: string]: { by: string, reason: string } } = {};
 
 	TimedCounter = TimedCounter;
 
+	rebuildLock = false;
 	updateServerLock = false;
 	cleanInterval: NodeJS.Timeout | null = null;
 	/**
@@ -78,12 +84,13 @@ export const Monitor = new class {
 	 *********************************************************/
 	crashlog(err: any, source = 'The main process', details: AnyObject | null = null) {
 		const error = (err || {}) as Error;
-		if ((error.stack || '').startsWith('@!!@')) {
+		const stack = error.stack || '';
+		const header = /^(\[\d+\] )?@!!@([^\n]*)\n/.exec(stack);
+		if (header) {
+			const [fullHeader, pidPrefix = '', metadata] = header;
 			try {
-				const stack = (error.stack || '');
-				const nlIndex = stack.indexOf('\n');
-				[error.name, error.message, source, details] = JSON.parse(stack.slice(4, nlIndex));
-				error.stack = stack.slice(nlIndex + 1);
+				[error.name, error.message, source, details] = JSON.parse(metadata);
+				error.stack = pidPrefix + stack.slice(fullHeader.length);
 			} catch {}
 		}
 		const crashType = crashlogger(error, source, details);
@@ -126,7 +133,8 @@ export const Monitor = new class {
 	}
 
 	error(text: string) {
-		(Rooms.get('development') || Rooms.get('staff') || Rooms.get('lobby'))?.add(`|error|${text}`).update();
+		const room = (Rooms.get('development') || Rooms.get('staff') || Rooms.get('lobby'));
+		room?.add(`|error|${text}`).update();
 		if (Config.loglevel <= 3) console.error(text);
 	}
 
@@ -142,10 +150,29 @@ export const Monitor = new class {
 		if (Config.loglevel <= 2) console.log(text);
 	}
 
+	logWithLevel(level: LogLevel, text: string) {
+		switch (level) {
+		case 'debug':
+			return this.debug(text);
+		case 'notice':
+			return this.notice(text);
+		case 'warning':
+			return this.warn(text);
+		case 'error':
+			return this.error(text);
+		}
+	}
+
+	warnDeprecated(text: string, details = '') {
+		if (this.deprecationsWarned.has(text)) return;
+		this.deprecationsWarned.add(text);
+		return this.warn(`${text}${details}`);
+	}
+
 	slow(text: string) {
 		const logRoom = Rooms.get('slowlog');
 		if (logRoom) {
-			logRoom.add(`|c|&|/log ${text}`).update();
+			logRoom.add(`|c|~|/log ${text}`).update();
 		} else {
 			this.warn(text);
 		}
@@ -300,7 +327,7 @@ export const Monitor = new class {
 	 * Counts roughly the size of an object to have an idea of the server load.
 	 */
 	sizeOfObject(object: AnyObject) {
-		const objectCache: Set<[] | object> = new Set();
+		const objectCache = new Set<[] | object>();
 		const stack: any[] = [object];
 		let bytes = 0;
 
@@ -333,7 +360,7 @@ export const Monitor = new class {
 	sh(command: string, options: ExecOptions = {}): Promise<[number, string, string]> {
 		return new Promise((resolve, reject) => {
 			exec(command, options, (error: ExecException | null, stdout: string | Buffer, stderr: string | Buffer) => {
-				resolve([error?.code || 0, '' + stdout, '' + stderr]);
+				resolve([error?.code || 0, `${stdout}`, `${stderr}`]);
 			});
 		});
 	}
@@ -345,7 +372,7 @@ export const Monitor = new class {
 			const index = Monitor.logPath('.gitindex');
 			const options = {
 				cwd: __dirname,
-				env: {GIT_INDEX_FILE: index.path},
+				env: { GIT_INDEX_FILE: index.path },
 			};
 
 			let [code, stdout, stderr] = await this.sh(`git add -A`, options);

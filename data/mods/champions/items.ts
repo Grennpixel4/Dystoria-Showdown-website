@@ -43,10 +43,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		inherit: true,
 		isNonstandard: "Past",
 	},
-	airballoon: {
-		inherit: true,
-		isNonstandard: null,
-	},
 	alakazite: {
 		inherit: true,
 		isNonstandard: null,
@@ -102,10 +98,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	bignugget: {
 		inherit: true,
 		isNonstandard: "Past",
-	},
-	bindingband: {
-		inherit: true,
-		isNonstandard: null,
 	},
 	blacksludge: {
 		inherit: true,
@@ -203,20 +195,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		inherit: true,
 		isNonstandard: "Past",
 	},
-	darkranite: {
-		inherit: true,
-		name: "Darkranite",
-		spritenum: 0,
-		megaStone: "Darkrai-Mega",
-		megaEvolves: "Darkrai",
-		itemUser: ["Darkrai"],
-		onTakeItem(item, source) {
-			if (item.megaEvolves === source.baseSpecies.baseSpecies) return false;
-			return true;
-		},
-		gen: 9,
-		isNonstandard: "Past",
-	},
 	dawnstone: {
 		inherit: true,
 		isNonstandard: "Past",
@@ -283,7 +261,19 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	},
 	ejectbutton: {
 		inherit: true,
-		isNonstandard: null,
+		onAfterMoveSecondary(target, source, move) {
+			if (source && source !== target && target.hp && move && move.category !== 'Status' && !move.flags['futuremove']) {
+				if (!this.canSwitch(target.side) || target.forceSwitchFlag || target.beingCalledBack || target.isSkyDropped()) return;
+				if (target.volatiles['commanding'] || target.volatiles['commanded']) return;
+				for (const pokemon of this.getAllActive()) {
+					if (pokemon.switchFlag === true) return;
+				}
+				target.switchFlag = true;
+				if (!target.useItem()) {
+					target.switchFlag = false;
+				}
+			}
+		},
 	},
 	ejectpack: {
 		inherit: true,
@@ -292,10 +282,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	electirizer: {
 		inherit: true,
 		isNonstandard: "Past",
-	},
-	electricseed: {
-		inherit: true,
-		isNonstandard: null,
 	},
 	emboarite: {
 		inherit: true,
@@ -417,10 +403,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		inherit: true,
 		isNonstandard: null,
 	},
-	grassyseed: {
-		inherit: true,
-		isNonstandard: null,
-	},
 	greatball: {
 		inherit: true,
 		isNonstandard: "Past",
@@ -459,20 +441,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	},
 	hearthflamemask: {
 		inherit: true,
-		isNonstandard: "Past",
-	},
-	heatranite: {
-		inherit: true,
-		name: "Heatranite",
-		spritenum: 0,
-		megaStone: "Heatran-Mega",
-		megaEvolves: "Heatran",
-		itemUser: ["Heatran"],
-		onTakeItem(item, source) {
-			if (item.megaEvolves === source.baseSpecies.baseSpecies) return false;
-			return true;
-		},
-		gen: 9,
 		isNonstandard: "Past",
 	},
 	heavyball: {
@@ -648,19 +616,8 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		isNonstandard: null,
 	},
 	meowsticite: {
-		name: "Meowsticite",
-		shortDesc: "If held by a Meowstic, this item allows it to Mega Evolve in battle.",
-		spritenum: 506,
-		megaStone: "Meowstic-M-Mega",
-		megaEvolves: "Meowstic",
-		altMegaEvolves: ["Meowstic-F"],
-		itemUser: ["Meowstic", "Meowstic-F"],
-		onTakeItem(item, source) {
-			if ((item.megaEvolves === source.baseSpecies.baseSpecies) || (item.altMegaEvolves[0] === source.baseSpecies.baseSpecies)) return false;
-			return true;
-		},
-		num: 2643,
-		gen: 9,
+		inherit: true,
+		isNonstandard: null,
 	},
 	metalalloy: {
 		inherit: true,
@@ -682,10 +639,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		inherit: true,
 		isNonstandard: "Past",
 	},
-	mistyseed: {
-		inherit: true,
-		isNonstandard: null,
-	},
 	moonball: {
 		inherit: true,
 		isNonstandard: "Past",
@@ -701,10 +654,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	netball: {
 		inherit: true,
 		isNonstandard: "Past",
-	},
-	normalgem: {
-		inherit: true,
-		isNonstandard: null,
 	},
 	ovalstone: {
 		inherit: true,
@@ -770,6 +719,10 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		inherit: true,
 		isNonstandard: "Past",
 	},
+	prettyfeather: {
+		inherit: true,
+		isNonstandard: "Past",
+	},
 	prismscale: {
 		inherit: true,
 		isNonstandard: "Past",
@@ -781,10 +734,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	protector: {
 		inherit: true,
 		isNonstandard: "Past",
-	},
-	psychicseed: {
-		inherit: true,
-		isNonstandard: null,
 	},
 	punchingglove: {
 		inherit: true,
@@ -826,10 +775,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		inherit: true,
 		isNonstandard: "Past",
 	},
-	redcard: {
-		inherit: true,
-		isNonstandard: null,
-	},
 	repeatball: {
 		inherit: true,
 		isNonstandard: "Past",
@@ -841,10 +786,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	ringtarget: {
 		inherit: true,
 		isNonstandard: "Past",
-	},
-	rockyhelmet: {
-		inherit: true,
-		isNonstandard: null,
 	},
 	roomservice: {
 		inherit: true,
@@ -921,7 +862,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	slowbronite: {
 		inherit: true,
 		isNonstandard: null,
-		shortDesc: "If held by a Slowbro (not Galarian Slowbro), this item allows it to Mega Evolve.",
 	},
 	snowball: {
 		inherit: true,
@@ -1007,10 +947,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 		inherit: true,
 		isNonstandard: "Past",
 	},
-	terrainextender: {
-		inherit: true,
-		isNonstandard: null,
-	},
 	throatspray: {
 		inherit: true,
 		isNonstandard: "Past",
@@ -1070,23 +1006,6 @@ export const Items: import('../../../sim/dex-items').ModdedItemDataTable = {
 	wellspringmask: {
 		inherit: true,
 		isNonstandard: "Past",
-	},
-	whiteherb: {
-		inherit: true,
-		/* DH2's version of White Herb is too out of date to handle this
-		onAnyAfterMove() {
-			// Desync: proceed from Parting Shot's point of view
-			this.queue.insertChoice({
-				choice: 'event',
-				event: 'WhiteHerb',
-				order: 99, // before switches
-				pokemon: this.effectState.target,
-			});
-		},
-		onWhiteHerb(pokemon) {
-			((this.effect as any).onStart as (p: Pokemon) => void).call(this, this.effectState.target);
-		},
-		*/
 	},
 	wikiberry: {
 		inherit: true,

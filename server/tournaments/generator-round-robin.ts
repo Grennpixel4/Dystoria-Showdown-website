@@ -4,8 +4,8 @@ interface Match {
 	result?: string;
 }
 
-import {Utils} from '../../lib/utils';
-import type {TournamentPlayer} from './index';
+import { Utils } from '../../lib/utils';
+import type { TournamentPlayer } from './index';
 
 export class RoundRobin {
 	readonly name: string;
@@ -88,7 +88,7 @@ export class RoundRobin {
 				if (!this.isDoubles && col >= row) return null;
 				if (p1 === p2) return null;
 
-				return {state: 'available'};
+				return { state: 'available' };
 			})
 		);
 		this.matchesPerPlayer = players.length - 1;
@@ -107,7 +107,7 @@ export class RoundRobin {
 		const playerIndex = this.players.indexOf(user);
 
 		for (const [col, match] of this.matches[playerIndex].entries()) {
-			if (!match || match.state !== 'available') continue;
+			if (match?.state !== 'available') continue;
 			const p2 = this.players[col];
 			match.state = 'finished';
 			match.result = 'loss';
@@ -115,11 +115,15 @@ export class RoundRobin {
 			p2.score += 1;
 			p2.games += 1;
 			this.totalPendingMatches--;
+			if (this.matchesPerPlayer && p2.games === this.matchesPerPlayer) {
+				p2.sendRoom(`|tournament|update|{"isJoined":false}`);
+				p2.game.updatePlayer(p2, null);
+			}
 		}
 
 		for (const [row, challenges] of this.matches.entries()) {
 			const match = challenges[playerIndex];
-			if (!match || match.state !== 'available') continue;
+			if (match?.state !== 'available') continue;
 			const p1 = this.players[row];
 			match.state = 'finished';
 			match.result = 'win';
@@ -127,6 +131,10 @@ export class RoundRobin {
 			p1.score += 1;
 			p1.games += 1;
 			this.totalPendingMatches--;
+			if (this.matchesPerPlayer && p1.games === this.matchesPerPlayer) {
+				p1.sendRoom(`|tournament|update|{"isJoined":false}`);
+				p1.game.updatePlayer(p1, null);
+			}
 		}
 
 		user.game.updatePlayer(user, null);
@@ -158,7 +166,7 @@ export class RoundRobin {
 		if (row < 0 || col < 0) return 'UserNotAdded';
 
 		const match = this.matches[row][col];
-		if (!match || match.state !== 'available') return 'InvalidMatch';
+		if (match?.state !== 'available') return 'InvalidMatch';
 
 		match.state = 'finished';
 		match.result = result;

@@ -8,15 +8,39 @@
  * @license MIT
  */
 
-const LadderStore: typeof import('./ladders-remote').LadderStore = (
-	typeof Config === 'object' && Config.remoteladder ? require('./ladders-remote') : require('./ladders-local')
-).LadderStore;
+import { LadderStore as RemoteLadderStore } from './ladders-remote';
+import { LadderStore as LocalLadderStore } from './ladders-local';
+
+const LadderStore: typeof RemoteLadderStore = (
+	typeof Config === 'object' && Config.remoteladder ? RemoteLadderStore : LocalLadderStore
+);
 
 const SECONDS = 1000;
 const PERIODIC_MATCH_INTERVAL = 60 * SECONDS;
 
-import type {ChallengeType} from './room-battle';
-import {BattleReady, BattleChallenge, GameChallenge, BattleInvite, challenges} from './ladders-challenges';
+import type { ChallengeType } from './room-battle';
+import { BattleReady, BattleChallenge, GameChallenge, BattleInvite, challenges } from './ladders-challenges';
+
+export interface LadderRating {
+	elo: number;
+	oldelo?: number | string;
+	gxe?: number;
+	rpr?: number;
+	rprd?: number;
+	formatid?: string;
+	username?: string;
+	sigma?: number | string;
+	rpsigma?: number | string;
+	isBot?: boolean;
+}
+
+export type LadderUpdate = [score: number, p1rating: LadderRating | null, p2rating: LadderRating | null];
+
+export interface VirtualFormat {
+	format: ID;
+	name: string;
+	custom: 'suspect';
+}
 
 /**
  * Keys are formatids
@@ -33,11 +57,16 @@ const searches = new Map<string, {
  * attempting to make a match with looser restrictions until one can be made.
  */
 class Ladder extends LadderStore {
+	readonly virtualCustom?: 'suspect';
 	constructor(formatid: string) {
-		super(formatid);
+		const virtual = Ladders.virtualFormats[toID(formatid)];
+		super(virtual?.format || formatid);
+		this.virtualCustom = virtual?.custom;
 	}
 
-	async prepBattle(connection: Connection, challengeType: ChallengeType, team: string | null = null, isRated = false) {
+	async prepBattle(
+		connection: Connection, challengeType: ChallengeType, team: string | null = null, isRated = false
+	) {
 		// all validation for a battle goes through here
 		const user = connection.user;
 		const userid = user.id;
@@ -63,6 +92,18 @@ class Ladder extends LadderStore {
 			return null;
 		}
 
+		if (this.virtualCustom && (challengeType === 'challenge' || challengeType === 'tour')) {
+			connection.popup(`Virtual formats can only be used for ladder searches.`);
+			return null;
+		}
+		if (user.isUserBot && this.virtualCustom === 'suspect') {
+			connection.popup(
+				`Bots are not allowed to queue for suspect tests.\n\n` +
+				`If you feel this designation is in error, please contact staff by typing /helpticket in chat.`
+			);
+			return null;
+		}
+
 		try {
 			this.formatid = Dex.formats.validate(this.formatid);
 		} catch (e: any) {
@@ -73,7 +114,6 @@ class Ladder extends LadderStore {
 		let rating = 0;
 		let valResult;
 		let removeNicknames = !!(user.locked || user.namelocked);
-
 
 		const regex = /(?:^|])([^|]*)\|([^|]*)\|/g;
 		let match = regex.exec(team);
@@ -112,7 +152,7 @@ class Ladder extends LadderStore {
 		if (isRated && !Ladders.disabled) {
 			const uid = user.id;
 			[valResult, rating] = await Promise.all([
-				TeamValidatorAsync.get(this.formatid).validateTeam(team, {removeNicknames, user: uid}),
+				TeamValidatorAsync.get(this.formatid).validateTeam(team, { removeNicknames, user: uid }),
 				this.getRating(uid),
 			]);
 			if (uid !== user.id) {
@@ -126,7 +166,7 @@ class Ladder extends LadderStore {
 				rating = 1;
 			}
 			const validator = TeamValidatorAsync.get(this.formatid);
-			valResult = await validator.validateTeam(team, {removeNicknames, user: user.id});
+			valResult = await validator.validateTeam(team, { removeNicknames, user: user.id });
 		}
 
 		if (!valResult.startsWith('1')) {
@@ -137,10 +177,10 @@ class Ladder extends LadderStore {
 			return null;
 		}
 
-		const settings = {...user.battleSettings, team: valResult.slice(1)};
+		const settings = { ...user.battleSettings, team: valResult.slice(1) };
 		user.battleSettings.inviteOnly = false;
 		user.battleSettings.hidden = false;
-		return new BattleReady(userid, this.formatid, settings, rating, challengeType);
+		return new BattleReady(userid, this.formatid, settings, rating, challengeType, this.virtualCustom);
 	}
 
 	static getChallenging(userid: ID) {
@@ -226,7 +266,6 @@ class Ladder extends LadderStore {
 		if (Ladders.challenges.remove(chall)) {
 			return Ladders.match([chall.ready, ready]);
 		}
-		return;
 	}
 
 	cancelSearch(user: User) {
@@ -278,18 +317,18 @@ class Ladder extends LadderStore {
 		return userSearches;
 	}
 	static updateSearch(user: User, connection: Connection | null = null) {
-		let games: {[k: string]: string} | null = {};
+		let games: { [k: string]: string } | null = {};
 		let atLeastOne = false;
 		for (const roomid of user.games) {
 			const room = Rooms.get(roomid);
 			if (!room) {
-				Monitor.warn(`while searching, room ${roomid} expired for user ${user.id} in rooms ${[...user.inRooms]} and games ${[...user.games]}`);
+				Monitor.warn(`while searching, room ${roomid} expired for user ${user.id} in rooms ${[...user.inRooms].join(',')} and games ${[...user.games].join(',')}`);
 				user.games.delete(roomid);
 				continue;
 			}
 			const game = room.game;
 			if (!game) {
-				Monitor.warn(`while searching, room ${roomid} has no game for user ${user.id} in rooms ${[...user.inRooms]} and games ${[...user.games]}`);
+				Monitor.warn(`while searching, room ${roomid} has no game for user ${user.id} in rooms ${[...user.inRooms].join(',')} and games ${[...user.games].join(',')}`);
 				user.games.delete(roomid);
 				continue;
 			}
@@ -324,7 +363,9 @@ class Ladder extends LadderStore {
 		}
 
 		const oldUserid = user.id;
-		const search = await this.prepBattle(connection, format.rated ? 'rated' : 'unrated', null, format.rated !== false);
+		const search = await this.prepBattle(
+			connection, format.rated ? 'rated' : 'unrated', null, format.rated !== false
+		);
 
 		if (oldUserid !== user.id) return;
 		if (!search) return;
@@ -355,6 +396,18 @@ class Ladder extends LadderStore {
 		// users must not have been matched immediately previously
 		for (const user of users) {
 			if (userids.includes(user.lastMatch)) return false;
+		}
+
+		// if one user is a bot and one is a suspect user or a ladder tour player, do not match
+		// if one user is a bot and the other non-bot users have not all opted in to matchmaking bots, do not match
+		for (const [search, user] of matches) {
+			const bots = users.filter(x => x.isUserBot && x.id !== user.id).map(x => x.id);
+			const hasNonOptedInUsers = users.some(
+				u => !u.isUserBot && !u.settings.allowLadderBots
+			);
+			if (search.custom === 'suspect' && bots.length) return false;
+			if (users.some(u => u.isUserBot) && hasNonOptedInUsers) return false;
+			if (Config.forcedprefixes?.some((p: any) => user.id.startsWith(p.prefix)) && bots.length) return false;
 		}
 
 		// search must be within range
@@ -518,4 +571,7 @@ export const Ladders = Object.assign(getLadder, {
 	// tells the client to ask the server for format information
 	formatsListPrefix: LadderStore.formatsListPrefix,
 	disabled: false as boolean | 'db',
+
+	// cache of suspect 'formats' to real formats
+	virtualFormats: {} as Record<string, VirtualFormat>,
 });

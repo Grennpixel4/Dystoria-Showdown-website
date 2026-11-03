@@ -18,7 +18,7 @@ export const Conditions: import('../../../sim/dex-conditions').ModdedConditionDa
 		inherit: true,
 		onBeforeMovePriority: 2,
 		onBeforeMove(pokemon) {
-			if (this.randomChance(1, 4)) {
+			if (this.randomChance(63, 256)) {
 				this.add('cant', pokemon, 'par');
 				return false;
 			}
@@ -28,8 +28,8 @@ export const Conditions: import('../../../sim/dex-conditions').ModdedConditionDa
 		name: 'slp',
 		effectType: 'Status',
 		onStart(target, source, sourceEffect) {
-			if (sourceEffect && sourceEffect.effectType === 'Move') {
-				this.add('-status', target, 'slp', '[from] move: ' + sourceEffect.name);
+			if (sourceEffect?.effectType === 'Move') {
+				this.add('-status', target, 'slp', `[from] move: ${sourceEffect.name}`);
 			} else {
 				this.add('-status', target, 'slp');
 			}
@@ -62,10 +62,10 @@ export const Conditions: import('../../../sim/dex-conditions').ModdedConditionDa
 			this.add('cant', pokemon, 'frz');
 			return false;
 		},
-		onModifyMove() {},
-		onDamagingHit() {},
+		onModifyMove: undefined, // no inherit
+		onDamagingHit: undefined, // no inherit
 		onAfterMoveSecondary(target, source, move) {
-			if ((move.secondary && move.secondary.status === 'brn') || move.statusRoll === 'brn') {
+			if ((move.secondary?.status === 'brn') || move.statusRoll === 'brn') {
 				target.cureStatus();
 			}
 		},
@@ -104,10 +104,10 @@ export const Conditions: import('../../../sim/dex-conditions').ModdedConditionDa
 			const damage = this.clampIntRange(Math.floor(pokemon.maxhp / 16), 1) * pokemon.volatiles['residualdmg'].counter;
 			this.damage(damage, pokemon, pokemon);
 		},
-		onSwitchIn(pokemon) {
-			// Regular poison status and damage after a switchout -> switchin.
+		onSwitchOut(pokemon) {
+			// Regular poison status and damage after a switchout
+			// The flag that distinguishes between regular poison and toxic is battle-only
 			pokemon.status = 'psn' as ID;
-			this.add('-status', pokemon, 'psn', '[silent]');
 		},
 		onAfterSwitchInSelf(pokemon) {
 			this.damage(this.clampIntRange(Math.floor(pokemon.maxhp / 16), 1));
@@ -116,12 +116,12 @@ export const Conditions: import('../../../sim/dex-conditions').ModdedConditionDa
 	confusion: {
 		inherit: true,
 		onStart(target, source, sourceEffect) {
-			if (sourceEffect && sourceEffect.id === 'lockedmove') {
+			if (sourceEffect?.id === 'lockedmove') {
 				this.add('-start', target, 'confusion', '[silent]');
 			} else {
 				this.add('-start', target, 'confusion');
 			}
-			if (sourceEffect && sourceEffect.id === 'berserkgene') {
+			if (sourceEffect?.id === 'berserkgene') {
 				this.effectState.time = 256;
 			} else {
 				this.effectState.time = this.random(2, 6);
@@ -169,7 +169,7 @@ export const Conditions: import('../../../sim/dex-conditions').ModdedConditionDa
 			return this.random(2, 4);
 		},
 		onResidual(target) {
-			if ((target.lastMove && target.lastMove.id === 'struggle') || target.status === 'slp') {
+			if ((target.lastMove?.id === 'struggle') || target.status === 'slp') {
 				// don't lock, and bypass confusion for calming
 				delete target.volatiles['lockedmove'];
 			}
@@ -177,23 +177,21 @@ export const Conditions: import('../../../sim/dex-conditions').ModdedConditionDa
 		onStart(target, source, effect) {
 			this.effectState.move = effect.id;
 		},
+		onAfterMove(pokemon) {
+			if (this.effectState.duration === 1) {
+				pokemon.removeVolatile('lockedmove');
+			}
+		},
 		onEnd(target) {
 			// Confusion begins even if already confused
 			delete target.volatiles['confusion'];
 			if (!target.side.getSideCondition('safeguard')) target.addVolatile('confusion');
 		},
-		onLockMove(pokemon) {
+		onLockMove() {
 			return this.effectState.move;
 		},
 		onMoveAborted(pokemon) {
 			delete pokemon.volatiles['lockedmove'];
-		},
-		onBeforeTurn(pokemon) {
-			const move = this.dex.moves.get(this.effectState.move);
-			if (move.id) {
-				this.debug('Forcing into ' + move.id);
-				this.queue.changeAction(pokemon, {choice: 'move', moveid: move.id});
-			}
 		},
 	},
 	futuremove: {
@@ -223,7 +221,7 @@ export const Conditions: import('../../../sim/dex-conditions').ModdedConditionDa
 		},
 		onStallMove() {
 			const counter = Math.floor(this.effectState.counter) || 127;
-			this.debug("Success chance: " + Math.round(counter * 1000 / 255) / 10 + "% (" + counter + "/255)");
+			this.debug(`Success chance: ${Math.round(counter * 1000 / 255) / 10}% (${counter}/255)`);
 			return this.randomChance(counter, 255);
 		},
 		onRestart() {
