@@ -5706,4 +5706,640 @@ export const Abilities: import('../sim/dex-abilities').AbilityDataTable = {
 		rating: 3,
 		num: -3,
 	},
+		piercingdrill: {
+		num: 10021,
+		name: "Piercing Drill",
+		shortDesc: "Damaging moves hit through Protect for 25% damage.",
+		desc: "This Pokemon's damaging moves hit through Protect and similar effects for 25% of the damage they would normally deal.",
+		rating: 4,
+		onModifyMove(move) {
+			if (move.flags["contact"]) {
+				delete move.flags["protect"];
+			}
+		},
+		flags: {},
+	},
+	dragonize: {
+		num: 10022,
+		name: "Dragonize",
+		shortDesc: "Normal moves become Dragon and gain 1.3x power.",
+		desc: "This Pokemon's Normal-type moves become Dragon-type and have their power multiplied by 1.3.",
+		rating: 4,
+		onModifyType(move, pokemon) {
+			if (move.type === 'Normal' && move.id !== 'struggle') move.type = 'Dragon';
+		},
+		onBasePower(basePower, pokemon, target, move) {
+			if (move.type === 'Dragon' && move.originalType === 'Normal') {
+				return this.chainModify(1.3);
+			}
+		},
+		flags: {},
+	},
+
+	spicyspray: {
+		num: 10023,
+		name: "Spicy Spray",
+		shortDesc: "Burns any Pokemon that damages this Pokemon.",
+		desc: "If this Pokemon is hit by a damaging move, the attacker is burned.",
+		rating: 4,
+		onDamagingHit(damage, target, source, move) {
+			if (!source || !source.hp) return;
+			source.trySetStatus('brn', target);
+		},
+		flags: {},
+	},
+  firemane: {
+		isNonstandard: "Future",
+		onModifyAtkPriority: 5,
+		onModifyAtk(atk, attacker, defender, move) {
+			if (move.type === 'Fire') {
+				this.debug('Fire Mane boost');
+				return this.chainModify(1.5);
+			}
+		},
+		onModifySpAPriority: 5,
+		onModifySpA(atk, attacker, defender, move) {
+			if (move.type === 'Fire') {
+				this.debug('Fire Mane boost');
+				return this.chainModify(1.5);
+			}
+		},
+		flags: {},
+		name: "Fire Mane",
+		rating: 3.5,
+		num: 10024,
+  },
+  auraguard: {
+    onSourceModifyDamage(damage, source, target, move) {
+      let mod = 1;
+      if (move.flags["contact"]) mod /= 2;
+      return this.chainModify(mod);
+    },
+    flags: { breakable: 1 },
+    name: "Aura Guard",
+    rating: 3.5,
+    num: 10025,
+  },
+  megasol: {
+    isNonstandard: 'Future',
+    onWeatherModifyDamagePriority: 1,
+    onWeatherModifyDamage(damage, attacker, defender, move) {
+        if (this.field.isWeather(['sunnyday', 'desolateland'])) return;
+        return this.dex.conditions.getByID('sunnyday').onWeatherModifyDamage.call(this, damage, attacker, defender, move);
+    },
+    flags: {},
+    name: 'Mega Sol',
+    rating: 3,
+    num: 10026
+    /* Partially implemented in Pokemon.effectiveWeather() in sim/pokemon.ts */
+  },
+  eelevate: {
+    isNonstandard: "Future",
+	onSourceAfterFaint(length, target, source, effect) {
+	if (effect && effect.effectType === 'Move') {
+		const bestStat = source.getBestStat(true, true);
+		this.boost({ [bestStat]: length }, source);
+			}
+		},
+		flags: { breakable: 1 },
+		name: "Eelevate",
+		rating: 4,
+		num: 10027,
+ },
+	/* =======================================================
+	   DYSTORIAN ABILITIES
+	======================================================= */
+
+  shadowwalker: {
+    onModifySpe(spe, pokemon) {
+      if (["eeriefog"].includes(pokemon.effectiveWeather())) {
+        return this.chainModify(2);
+      }
+    },
+    flags: {},
+    name: "Shadow Walker",
+    rating: 3,
+    num: 10001
+  },
+
+	scarfdown: {
+		num: 10002,
+		name: "Scarf Down",
+		rating: 3,
+		flags: {},
+		onModifyPriority(priority, pokemon, target, move) {
+			const berryMoves = [
+				'belch', 'bugbite', 'naturalgift', 'pluck',
+				'stuffcheeks', 'teatime', 'snaccident'
+			];
+			if (berryMoves.includes(move.id)) {
+				return priority + 1;
+			}
+		},
+		desc: "Belch, Bug Bite, Natural Gift, Pluck, Stuff Cheeks, Teatime, and Snaccident gain +1 priority.",
+		shortDesc: "Berry moves gain +1 priority.",
+	},
+
+	gravitydistortion: {
+		num: 10003,
+		name: "Gravity Distortion",
+		shortDesc: "After 1 turn on field, starts Trick Room if active, awake, and not taunted.",
+		desc: "After this Pokemon has remained active for one turn, it sets Trick Room once per battle if it is not fainted, asleep, or under Taunt.",
+		rating: 4,
+		onStart(pokemon) {
+			if (pokemon.abilityState.gravityDistortionUsed) return;
+			pokemon.abilityState.gravityDistortionPending = true;
+			pokemon.abilityState.gravityDistortionReadyTurn = this.turn + 1;
+		},
+		onResidualOrder: 28,
+		onResidual(pokemon) {
+			if (pokemon.abilityState.gravityDistortionUsed) return;
+			if (!pokemon.abilityState.gravityDistortionPending) return;
+			if (this.turn < pokemon.abilityState.gravityDistortionReadyTurn) return;
+			pokemon.abilityState.gravityDistortionPending = false;
+			if (!pokemon.hp || pokemon.status === "slp" || pokemon.volatiles["taunt"]) return;
+			if (this.field.getPseudoWeather("trickroom")) return;
+			pokemon.abilityState.gravityDistortionUsed = true;
+			this.add("-ability", pokemon, "Gravity Distortion");
+			this.field.addPseudoWeather("trickroom");
+		},
+		onEnd(pokemon) {
+			pokemon.abilityState.gravityDistortionPending = false;
+		},
+		flags: {},
+	},
+
+    shroudcall: {
+    onStart(source) {
+      this.field.setWeather("eeriefog");
+   },
+      flags: {},
+      name: "Shroud Call",
+	  shortDesc: "On switch-in, summons Eerie Fog.",
+	  desc: "On switch-in, this Pokemon sets Eerie Fog.",
+      rating: 4,
+      num: 10004
+    },
+	exodus: {
+		num: 10005,
+		name: "Exodus",
+		shortDesc: "On switch-in, tries to force all other active Pokemon out.",
+		desc: "When this Pokemon switches in, all other active Pokemon are forced out if possible. Pokemon that cannot be forced out stay in.",
+		rating: 4,
+		onStart(source) {
+			this.add("-ability", source, "Exodus");
+			this.add("-message", source.name + "'s Exodus forces everyone else to retreat!");
+			for (const target of this.getAllActive()) {
+				if (!target || target === source) continue;
+				if (!target.hp) continue;
+				if (!this.canSwitch(target.side)) continue;
+				const hitResult = this.runEvent("DragOut", target, source, this.effect);
+				if (hitResult) {
+					target.forceSwitchFlag = true;
+				}
+			}
+		},
+		flags: {},
+	},
+
+	nuhuh: {
+		num: 10006,
+		name: "Nuh uh",
+		shortDesc: "Cannot be KOed by direct damage; blocks indirect damage; heals to full at 1 HP.",
+		desc: "Direct damage cannot reduce this Pokemon below 1 HP. Indirect and status damage are prevented. If this Pokemon is reduced to 1 HP by damage, it heals to full HP.",
+		rating: 5,
+		onDamage(damage, target, source, effect) {
+			if (effect?.effectType !== "Move") return false;
+			if (damage >= target.hp) return target.hp - 1;
+		},
+		onAfterDamage(damage, target) {
+			if (damage > 0 && target.hp === 1) {
+				this.add("-activate", target, "ability: Nuh uh");
+				this.heal(target.maxhp, target);
+			}
+		},
+		flags: {},
+	},
+chimeric: {
+	onStart(pokemon) {
+		this.singleEvent('TerrainChange', this.effect, this.effectState, pokemon);
+	},
+	onTerrainChange(pokemon, source, effect) {
+		if (!pokemon.hp) return;
+		const seedStat = {
+			grassyseed: 'atk',
+			electricseed: 'spe',
+			psychicseed: 'spa',
+			mistyseed: 'crit',
+		};
+		if (effect && seedStat[effect.id]) {
+			pokemon.addVolatile('chimeric', pokemon, effect);
+			return;
+		}
+		const terrain = this.field.terrain;
+		if (['grassyterrain', 'electricterrain', 'psychicterrain', 'mistyterrain'].includes(terrain)) {
+			pokemon.addVolatile('chimeric', pokemon, effect);
+		} else if (pokemon.volatiles['chimeric'] && !pokemon.volatiles['chimeric'].fromSeed) {
+			pokemon.removeVolatile('chimeric');
+		}
+	},
+	onEnd(pokemon) {
+		pokemon.removeVolatile('chimeric');
+	},
+	condition: {
+		noCopy: true,
+		onStart(pokemon, source, effect) {
+			const terrainStat = {
+				grassyterrain: 'atk',
+				electricterrain: 'spe',
+				psychicterrain: 'spa',
+				mistyterrain: 'crit',
+			};
+			const seedStat = {
+				grassyseed: 'atk',
+				electricseed: 'spe',
+				psychicseed: 'spa',
+				mistyseed: 'crit',
+			};
+			if (effect && seedStat[effect.id]) {
+				this.effectState.fromSeed = true;
+				this.effectState.boostedStat = seedStat[effect.id];
+				this.add('-activate', pokemon, 'ability: Chimeric', '[fromitem]');
+			} else {
+				this.effectState.boostedStat = terrainStat[this.field.terrain];
+				if (!this.effectState.boostedStat) return false;
+				this.add('-activate', pokemon, 'ability: Chimeric');
+			}
+		},
+		onModifyAtk(atk) {
+			if (this.effectState.boostedStat !== 'atk') return;
+			return this.chainModify(1.5);
+		},
+		onModifySpA(spa) {
+			if (this.effectState.boostedStat !== 'spa') return;
+			return this.chainModify(1.5);
+		},
+		onModifySpe(spe) {
+			if (this.effectState.boostedStat !== 'spe') return;
+			return this.chainModify(1.5);
+		},
+		onModifyCritRatio(critRatio) {
+			if (this.effectState.boostedStat !== 'crit') return;
+			return critRatio + 1;
+		},
+	},
+	name: "Chimeric",
+	rating: 4,
+	num: 10007,
+},
+chokesmoke: {
+	num: 10008,
+	name: "Choke Smoke",
+	shortDesc: "While active, all active Pokemon are easier to hit (as if -1 Evasion, but not an actual stat change).",
+	desc: "On entry, this Pokemon makes all active Pokemon easier to hit, equivalent to a -1 Evasion stage, but implemented as a standalone effect rather than an actual stat stage. This means it cannot be prevented by Clear Body/Mist/etc., cannot be restored by White Herb, and does not stack with or get affected by real Evasion boosts. While this Pokemon remains active, newly switched-in Pokemon also receive this effect. The effect ends for a Pokemon when it switches out, and ends for everyone when this Pokemon leaves the field.",
+	rating: 3,
+	onStart(source) {
+		this.add("-ability", source, "Choke Smoke");
+		for (const target of this.getAllActive()) {
+			if (!target || !target.hp) continue;
+			target.addVolatile("chokesmoke", source);
+		}
+	},
+	onAnySwitchIn(target) {
+		const source = this.effectState.target;
+		if (!source || !source.isActive || !target || !target.hp) return;
+		target.addVolatile("chokesmoke", source);
+	},
+	onEnd(source) {
+		for (const target of this.getAllActive()) {
+			if (target?.volatiles["chokesmoke"]?.source === source) {
+				target.removeVolatile("chokesmoke");
+			}
+		}
+	},
+	condition: {
+		noCopy: true,
+		onModifyAccuracy(accuracy, target, source, move) {
+			if (typeof accuracy !== "number") return;
+			// -1 Evasion stage = 3/4 multiplier on incoming accuracy in real mechanics;
+			// to make the target *easier* to hit, we apply the inverse: 4/3 ≈ 5461/4096
+			return this.chainModify([5461, 4096]);
+		},
+	},
+	flags: {},
+},
+
+	anchorzone: {
+		num: 10009,
+		name: "Anchor Zone",
+		shortDesc: "On switch-in, sets Gravity.",
+		desc: "On switch-in, this Pokemon sets Gravity.",
+		rating: 4,
+		onStart(source) {
+			this.add("-ability", source, "Anchor Zone");
+			if (!this.field.getPseudoWeather("gravity")) {
+				this.field.addPseudoWeather("gravity", source, this.dex.moves.get("gravity"));
+			}
+		},
+		flags: {},
+	},
+
+  stormchaser: {
+    onModifySpe(spe, pokemon) {
+      if (["hail", "snow", "sunnyday", "desolateland", "sandstorm", "raindance", "primordialsea", "eeriefog"].includes(pokemon.effectiveWeather())) {
+        return this.chainModify(2);
+      }
+    },
+    flags: {},
+    name: "Storm Chaser",
+    rating: 3,
+    num: 10010
+  },
+
+	unsettle: {
+		num: 10011,
+		name: "Unsettle",
+		shortDesc: "On switch-in, lowers adjacent foes' SpA by 1.",
+		desc: "On switch-in, lowers the Special Attack of adjacent opposing Pokemon by 1 stage.",
+		rating: 3.5,
+		onStart(pokemon) {
+			let shown = false;
+			for (const target of pokemon.adjacentFoes()) {
+				if (!shown) {
+					this.add("-ability", pokemon, "Unsettle", "boost");
+					shown = true;
+				}
+				if (target.volatiles["substitute"]) {
+					this.add("-immune", target);
+					continue;
+				}
+				this.boost({ spa: -1 }, target, pokemon, this.effect, true);
+			}
+		},
+		flags: {},
+	},
+
+	incendia: {
+		num: 10012,
+		name: "Incendia",
+		shortDesc: "Raises crit ratio against burned targets.",
+		desc: "This Pokemon's moves gain +3 critical hit ratio against burned targets.",
+		rating: 4,
+		onModifyCritRatio(critRatio, source, target) {
+			if (target && target.status === "brn") {
+				return critRatio + 3;
+			}
+			return critRatio;
+		},
+		flags: {},
+	},
+
+	singularitydrift: {
+		num: 10013,
+		name: "Singularity Drift",
+		shortDesc: "On being hit by an attack, lowers the attacker's Speed by 2.",
+		desc: "When this Pokemon is damaged by a move, the attacker has its Speed lowered by 2 stages.",
+		rating: 4,
+		onDamagingHit(damage, target, source) {
+			if (!source || !source.isActive || source.fainted || source === target) return;
+			this.add("-activate", target, "ability: Singularity Drift");
+			this.boost({ spe: -2 }, source, target, this.effect, true);
+		},
+		flags: {},
+	},
+
+	tavernbrawler: {
+		num: 10014,
+		name: "Tavern Brawler",
+		shortDesc: "While confused: Atk x2, Spe x1.5, and no confusion self-hit damage.",
+		desc: "While this Pokemon is confused, its Attack is doubled, its Speed is multiplied by 1.5, and it is immune to confusion self-hit damage.",
+		rating: 4,
+		onModifyAtkPriority: 5,
+		onModifyAtk(atk, pokemon) {
+			if (pokemon.volatiles["confusion"]) {
+				return this.chainModify(2);
+			}
+		},
+		onModifySpe(spe, pokemon) {
+			if (pokemon.volatiles["confusion"]) {
+				return this.chainModify(1.5);
+			}
+		},
+		onDamage(damage, target, source, effect) {
+			if (effect && effect.id === "confusion") {
+				this.add("-immune", target, "[from] ability: Tavern Brawler");
+				return false;
+			}
+		},
+		flags: {},
+	},
+
+	vengefulcore: {
+		num: 10015,
+		name: "Vengeful-Core",
+		shortDesc: "Gets +1 Atk whenever a Pokemon faints.",
+		desc: "This Pokemon gains +1 Attack whenever any active Pokemon faints.",
+		rating: 3.5,
+		onAnyFaintPriority: 1,
+		onAnyFaint() {
+			const pokemon = this.effectState.target;
+			if (!pokemon || !pokemon.isActive || !pokemon.hp) return;
+			this.boost({ atk: 1 }, pokemon, pokemon, this.effect);
+		},
+		flags: {},
+	},
+
+	fearthereaper: {
+		num: 10016,
+		name: "Fear the Reaper",
+		shortDesc: "Atk/SpA are boosted by 20% per fainted Pokemon.",
+		desc: "This Pokemon's Attack and Special Attack are multiplied by 1.2x for each Pokemon that has fainted.",
+		rating: 4,
+		onAnyFaintPriority: 1,
+		onAnyFaint() {
+			this.effectState.fainted = (this.effectState.fainted || 0) + 1;
+		},
+		onModifyAtk(atk) {
+			const fainted = this.effectState.fainted || 0;
+			if (fainted > 0) {
+				return this.chainModify(1 + (0.2 * fainted));
+			}
+		},
+		onModifySpA(spa) {
+			const fainted = this.effectState.fainted || 0;
+			if (fainted > 0) {
+				return this.chainModify(1 + (0.2 * fainted));
+			}
+		},
+		flags: {},
+	},
+
+	plagueboost: {
+		num: 10017,
+		name: "Plague Boost",
+		shortDesc: "If poisoned, Attack and Speed are multiplied by 1.5.",
+		desc: "While this Pokemon is poisoned, its Attack and Speed are multiplied by 1.5. Announces when the boost activates.",
+		rating: 4,
+		onStart(pokemon) {
+			pokemon.abilityState.plagueBoostActive = false;
+		},
+		onUpdate(pokemon) {
+			const active = pokemon.status === "psn" || pokemon.status === "tox";
+			if (active && !pokemon.abilityState.plagueBoostActive) {
+				pokemon.abilityState.plagueBoostActive = true;
+				this.add("-activate", pokemon, "ability: Plague Boost");
+			} else if (!active && pokemon.abilityState.plagueBoostActive) {
+				pokemon.abilityState.plagueBoostActive = false;
+			}
+		},
+		onModifyAtk(atk, pokemon) {
+			if (pokemon.status === "psn" || pokemon.status === "tox") {
+				return this.chainModify(1.5);
+			}
+		},
+		onModifySpe(spe, pokemon) {
+			if (pokemon.status === "psn" || pokemon.status === "tox") {
+				return this.chainModify(1.5);
+			}
+		},
+		onEnd(pokemon) {
+			pokemon.abilityState.plagueBoostActive = false;
+		},
+		flags: {},
+	},
+
+	skullsplinter: {
+		num: 10018,
+		name: "Skull Splinter",
+		shortDesc: "When hit by contact, sets Spikes on the attacker's side.",
+		desc: "If this Pokemon is hit by a contact move, it sets Spikes on the attacker's side.",
+		rating: 3.5,
+		onDamagingHit(damage, target, source, move) {
+			if (!source || !source.hp) return;
+			if (!this.checkMoveMakesContact(move, source, target, true)) return;
+			this.add("-ability", target, "Skull Splinter");
+			this.add("-message", "Skull splinters scatter across the opposing field!");
+			source.side.addSideCondition("spikes", target);
+		},
+		flags: {},
+	},
+
+herald: {
+	num: 10019,
+	name: "Herald",
+	shortDesc: "The first ally to switch in gets +1 Atk and +1 SpA. Once per battle.",
+	desc: "The first time an ally other than this Pokemon switches in while this Pokemon is active, that ally gets +1 Attack and +1 Special Attack. This effect only happens once per battle.",
+	rating: 3,
+	onAllySwitchIn(pokemon) {
+		const source = this.effectState.target;
+		if (pokemon === source) return;
+		if (!source.m) source.m = {};
+		if (source.m.heraldUsed) return;
+		source.m.heraldUsed = true;
+		this.add("-ability", source, "Herald");
+		this.boost({ atk: 1, spa: 1 }, pokemon, source, this.effect);
+	},
+	flags: {},
+},
+gravedigger: {
+	num: 10021,
+	name: "Grave Digger",
+	rating: 3,
+	flags: {},
+
+	// Reset when this Pokemon leaves the field, so re-entering fog heals again
+	onEnd(pokemon) {
+		pokemon.abilityState.fogHealed = false;
+	},
+
+	// Runs after every action, so it covers both "switched in during fog"
+	// and "fog started while already on the field"
+	onUpdate(pokemon) {
+		if (!pokemon.hp || !pokemon.isActive) return;
+		const fog = pokemon.effectiveWeather() === "eeriefog";
+		if (fog && !pokemon.abilityState.fogHealed) {
+			pokemon.abilityState.fogHealed = true;
+			const healed = pokemon.heal(Math.floor(pokemon.baseMaxhp / 4));
+			if (healed) {
+				this.add("-heal", pokemon, pokemon.getHealth, "[from] ability: Grave Digger");
+			}
+		} else if (!fog) {
+			pokemon.abilityState.fogHealed = false;
+		}
+	},
+
+	// Normal moves become Ground in Eerie Fog
+	onModifyTypePriority: -1,
+	onModifyType(move, pokemon) {
+		const noModifyType = [
+			"judgment", "multiattack", "naturalgift", "revelationdance",
+			"technoblast", "terrainpulse", "weatherball",
+		];
+		if (
+			pokemon.effectiveWeather() === "eeriefog" &&
+			move.type === "Normal" &&
+			!noModifyType.includes(move.id) &&
+			!(move.isZ && move.category !== "Status") &&
+			!(move.name === "Tera Blast" && pokemon.terastallized)
+		) {
+			move.type = "Ground";
+		}
+	},
+
+	shortDesc: "Heals 1/4 max HP when Eerie Fog starts or on switch-in. Normal moves become Ground-type in Eerie Fog.",
+	desc: "Heals 1/4 of this Pokemon's max HP when Eerie Fog starts or when this Pokemon switches in while Eerie Fog is active. While Eerie Fog is active, this Pokemon's Normal-type moves become Ground-type.",
+},
+	proclaimer: {
+		num: 10020,
+		name: "Proclaimer",
+		shortDesc: "On switch-in, reveals a foe's strongest super-effective move (random if tied).",
+		desc: "On switch-in, this Pokemon identifies a super-effective move from an opposing active Pokemon. If multiple are found, it reveals the one with the highest base power; ties are chosen at random.",
+		rating: 2.5,
+		onStart(pokemon) {
+			let revealedMoves = [];
+			let bestPower = -1;
+			for (const target of pokemon.foes()) {
+				for (const moveSlot of target.moveSlots) {
+					const move = this.dex.moves.get(moveSlot.move);
+					if (move.category === "Status") continue;
+					const moveType = move.id === "hiddenpower" ? target.hpType : move.type;
+					if (!this.dex.getImmunity(moveType, pokemon)) continue;
+					if (this.dex.getEffectiveness(moveType, pokemon) <= 0) continue;
+					let bp = move.basePower;
+					if (move.ohko) bp = 150;
+					if (["counter", "metalburst", "mirrorcoat"].includes(move.id)) bp = 120;
+					if (bp === 1) bp = 80;
+					if (!bp && move.category !== "Status") bp = 80;
+					if (bp > bestPower) {
+						revealedMoves = [[move, target]];
+						bestPower = bp;
+					} else if (bp === bestPower) {
+						revealedMoves.push([move, target]);
+					}
+				}
+			}
+			if (!revealedMoves.length) return;
+			const [revealedMove, revealedTarget] = this.sample(revealedMoves);
+			this.add("-activate", pokemon, "ability: Proclaimer", revealedMove.name, "[of] " + revealedTarget);
+		},
+		flags: {},
+	},
+  royalpresence: {
+    onFoeTryMove(target, source, move) {
+      const targetAllExceptions = ["perishsong", "flowershield", "rototiller"];
+      if (move.target === "foeSide" || move.target === "all" && !targetAllExceptions.includes(move.id)) {
+        return;
+      }
+      const dazzlingHolder = this.effectState.target;
+      if ((source.isAlly(dazzlingHolder) || move.target === "all") && move.priority > 0.1) {
+        this.attrLastMove("[still]");
+        this.add("cant", dazzlingHolder, "ability: Royal Presence", move, "[of] " + target);
+        return false;
+      }
+    },
+    flags: { breakable: 1 },
+    name: "Royal Presence",
+    rating: 2.5,
+    num: 10018
+  },
 };

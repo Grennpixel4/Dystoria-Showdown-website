@@ -957,4 +957,69 @@ export const Conditions: import('../sim/dex-conditions').ConditionDataTable = {
 			return bp;
 		},
 	},
+	  eeriefog: {
+    name: "EerieFog",
+    effectType: "Weather",
+    duration: 5,
+    durationCallback(source, effect) {
+      if (source?.hasItem("hauntedrock")) {
+        return 8;
+      }
+      return 5;
+    },
+	onNegateImmunity(pokemon, type) {
+      if (pokemon.hasType("Ghost") && ["Normal"].includes(type))
+        return false;
+	  if (pokemon.hasType("Normal") && ["Ghost"].includes(type))
+        return false;
+    },
+	onModifyMove(move, pokemon) {
+        if (move.secondaries && move.id === "astonish" && pokemon.effectiveWeather() === 'eeriefog') {
+          this.debug("doubling secondary chance");
+          for (const secondary of move.secondaries) {
+            if (pokemon.hasAbility("serenegrace") && secondary.volatileStatus === "flinch")
+              continue;
+            if (secondary.chance)
+              secondary.chance *= 4;
+          }
+          if (move.self?.chance)
+            move.self.chance *= 4;
+        }
+      },
+	onEffectivenessPriority: -1,
+    onEffectiveness(typeMod, target, type, move) {
+	  if (move.type === "Normal" && type === "Ghost")
+		return -1;
+	  if (move.type === "Ghost" && type === "Normal")
+		return -1;	
+    },
+    onWeatherModifyDamage(damage, attacker, defender, move) {
+      if (defender.hasItem("utilityumbrella"))
+        return;
+      if (move.type === "Fairy") {
+        return this.chainModify(0.8);
+      }
+    },
+    onFieldStart(battle, source, effect) {
+      if (effect?.effectType === "Ability") {
+        if (this.gen <= 5)
+          this.effectState.duration = 0;
+        this.add("-weather", "EerieFog", "[from] ability: " + effect.name, "[of] " + source);
+      } else {
+        this.add("-weather", "EerieFog");
+      }
+    },
+    onImmunity(type, pokemon) {
+      if (pokemon.hasItem("utilityumbrella"))
+        return;
+    },
+    onFieldResidualOrder: 1,
+     onFieldResidual() {
+      this.add("-weather", "EerieFog", "[upkeep]");
+      this.eachEvent("Weather");
+    },
+    onFieldEnd() {
+      this.add("-weather", "none");
+    }
+  },
 };

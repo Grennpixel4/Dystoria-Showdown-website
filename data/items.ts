@@ -1814,20 +1814,30 @@ export const Items: import('../sim/dex-items').ItemDataTable = {
 		fling: {
 			basePower: 10,
 		},
-		onSwitchInPriority: -1,
-		onStart(pokemon) {
-			if (!pokemon.ignoringItem() && this.field.isTerrain('electricterrain')) {
-				pokemon.useItem();
-			}
-		},
-		onTerrainChange(pokemon) {
-			if (this.field.isTerrain('electricterrain')) {
-				pokemon.useItem();
-			}
-		},
-		boosts: {
-			def: 1,
-		},
+	onStart(pokemon) {
+		if (this.field.isTerrain('electricterrain') && pokemon.useItem()) {
+			this.boost({ def: 1 });
+		}
+	},
+	onTerrainChange(pokemon) {
+		if (this.field.isTerrain('electricterrain') && pokemon.useItem()) {
+			this.boost({ def: 1 });
+		}
+	},
+	onUpdate(pokemon) {
+		if (pokemon.baseAbility !== 'chimeric' || pokemon.transformed) return;
+		if (this.field.isTerrain('electricterrain')) return;
+		if (pokemon.useItem()) {
+			this.singleEvent(
+				'TerrainChange',
+				pokemon.getAbility(),
+				pokemon.abilityState,
+				pokemon,
+				pokemon,
+				this.dex.items.get('electricseed')
+			);
+		}
+	},
 		num: 881,
 		gen: 7,
 	},
@@ -2610,20 +2620,30 @@ export const Items: import('../sim/dex-items').ItemDataTable = {
 		fling: {
 			basePower: 10,
 		},
-		onSwitchInPriority: -1,
-		onStart(pokemon) {
-			if (!pokemon.ignoringItem() && this.field.isTerrain('grassyterrain')) {
-				pokemon.useItem();
-			}
-		},
-		onTerrainChange(pokemon) {
-			if (this.field.isTerrain('grassyterrain')) {
-				pokemon.useItem();
-			}
-		},
-		boosts: {
-			def: 1,
-		},
+			onStart(pokemon) {
+		if (this.field.isTerrain('grassyterrain') && pokemon.useItem()) {
+			this.boost({ def: 1 });
+		}
+	},
+	onTerrainChange(pokemon) {
+		if (this.field.isTerrain('grassyterrain') && pokemon.useItem()) {
+			this.boost({ def: 1 });
+		}
+	},
+	onUpdate(pokemon) {
+		if (pokemon.baseAbility !== 'chimeric' || pokemon.transformed) return;
+		if (this.field.isTerrain('grassyterrain')) return;
+		if (pokemon.useItem()) {
+			this.singleEvent(
+				'TerrainChange',
+				pokemon.getAbility(),
+				pokemon.abilityState,
+				pokemon,
+				pokemon,
+				this.dex.items.get('grassyseed')
+			);
+		}
+	},
 		num: 884,
 		gen: 7,
 	},
@@ -4219,22 +4239,31 @@ export const Items: import('../sim/dex-items').ItemDataTable = {
 		name: "Misty Seed",
 		spritenum: 666,
 		fling: {
-			basePower: 10,
-		},
-		onSwitchInPriority: -1,
-		onStart(pokemon) {
-			if (!pokemon.ignoringItem() && this.field.isTerrain('mistyterrain')) {
-				pokemon.useItem();
-			}
-		},
-		onTerrainChange(pokemon) {
-			if (this.field.isTerrain('mistyterrain')) {
-				pokemon.useItem();
-			}
-		},
-		boosts: {
-			spd: 1,
-		},
+			basePower: 10, },
+onStart(pokemon) {
+		if (this.field.isTerrain('mistyterrain') && pokemon.useItem()) {
+			this.boost({ spd: 1 });
+		}
+	},
+	onTerrainChange(pokemon) {
+		if (this.field.isTerrain('mistyterrain') && pokemon.useItem()) {
+			this.boost({ spd: 1 });
+		}
+	},
+	onUpdate(pokemon) {
+		if (pokemon.baseAbility !== 'chimeric' || pokemon.transformed) return;
+		if (this.field.isTerrain('mistyterrain')) return;
+		if (pokemon.useItem()) {
+			this.singleEvent(
+				'TerrainChange',
+				pokemon.getAbility(),
+				pokemon.abilityState,
+				pokemon,
+				pokemon,
+				this.dex.items.get('mistyseed')
+			);
+		}
+	},
 		num: 883,
 		gen: 7,
 	},
@@ -4930,19 +4959,30 @@ export const Items: import('../sim/dex-items').ItemDataTable = {
 		fling: {
 			basePower: 10,
 		},
-		onSwitchInPriority: -1,
-		onStart(pokemon) {
-			if (!pokemon.ignoringItem() && this.field.isTerrain('psychicterrain')) {
-				pokemon.useItem();
-			}
-		},
-		onTerrainChange(pokemon) {
-			if (this.field.isTerrain('psychicterrain')) {
-				pokemon.useItem();
-			}
-		},
-		boosts: {
-			spd: 1,
+	onStart(pokemon) {
+		if (this.field.isTerrain('psychicterrain') && pokemon.useItem()) {
+			this.boost({ spd: 1 });
+		}
+	},
+	onTerrainChange(pokemon) {
+		if (this.field.isTerrain('psychicterrain') && pokemon.useItem()) {
+			this.boost({ spd: 1 });
+		}
+	},
+	onUpdate(pokemon) {
+		if (pokemon.baseAbility !== 'chimeric' || pokemon.transformed) return;
+		if (this.field.isTerrain('psychicterrain')) return;
+		if (pokemon.useItem()) {
+			this.singleEvent(
+				'TerrainChange',
+				pokemon.getAbility(),
+				pokemon.abilityState,
+				pokemon,
+				pokemon,
+				this.dex.items.get('psychicseed')
+			);
+		}
+	},: 1,
 		},
 		num: 882,
 		gen: 7,

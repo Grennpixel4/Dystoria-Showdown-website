@@ -21302,4 +21302,576 @@ export const Moves: import('../sim/dex-moves').MoveDataTable = {
 		type: "Fire",
 		contestType: "Beautiful",
 	},
+	  enshroud: {
+    num: 20001,
+    accuracy: true,
+    basePower: 0,
+    category: "Status",
+    name: "Enshroud",
+    shortDesc: "Summons Eerie Fog weather.",
+    desc: "Sets Eerie Fog weather for 5 turns.",
+    pp: 5,
+    priority: 0,
+    flags: { metronome: 1 },
+    weather: "eeriefog",
+    secondary: null,
+    target: "all",
+    type: "Ghost",
+    zMove: { boost: { spe: 1 } },
+    contestType: "Beautiful"
+  },
+
+// Custom move: steals and consumes the target Berry if possible.
+snaccident: {
+    num: 20002,
+    accuracy: 100,
+    basePower: 70,
+    category: "Special",
+    name: "Snaccident",
+    shortDesc: "May consume the target Berry.",
+    desc: "If the target is holding a Berry, this move steals and consumes that Berry.",
+    pp: 15,
+    priority: 0,
+    flags: { contact: 1, protect: 1, mirror: 1, distance: 1, metronome: 1 },
+    onHit(target, source) {
+      const item = target.getItem();
+      if (source.hp && item.isBerry && target.takeItem(source)) {
+        this.add("-enditem", target, item.name, "[from] stealeat", "[move] Snaccident", "[of] " + source);
+        if (this.singleEvent("Eat", item, null, source, null, null)) {
+          this.runEvent("EatItem", source, null, null, item);
+          if (item.id === "leppaberry")
+            target.staleness = "external";
+        }
+        if (item.onEat)
+          source.ateBerry = true;
+      }
+    },
+    secondary: null,
+    target: "any",
+    type: "Dark",
+    contestType: "Cute"
+  },
+
+// Custom move: spread Fire attack with burn chance.
+blazingcleave: {
+    num: 20003,
+    accuracy: 100,
+    basePower: 75,
+    category: "Physical",
+    name: "Blazing Cleave",
+    shortDesc: "30% chance to burn. Hits all adjacent foes.",
+    desc: "Has a 30% chance to burn each target.",
+    pp: 15,
+    priority: 0,
+    flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },
+    secondaries: [
+      {
+        chance: 30,
+        status: "brn"
+      }
+    ],
+    target: "allAdjacentFoes",
+    type: "Fire",
+    contestType: "Cool"
+  },
+// Custom move: single-target Flying attack with paralysis chance.
+angelicflourish: {
+    num: 20004,
+    accuracy: 100,
+    basePower: 80,
+    category: "Special",
+    name: "Angelic Flourish",
+    shortDesc: "30% chance to paralyze the target.",
+    desc: "Has a 30% chance to paralyze the target.",
+    pp: 15,
+    priority: 0,
+    flags: { protect: 1, mirror: 1, metronome: 1 },
+    secondary: {
+      chance: 30,
+      status: "par"
+    },
+    target: "normal",
+    type: "Flying",
+    contestType: "Beautiful"
+  },
+// Custom move: disruptive priority status move with multiple debuffs.
+skillissue: {
+    num: 20005,
+    accuracy: 100,
+    basePower: 0,
+    category: "Status",
+    name: "Skill Issue",
+    shortDesc: "Priority move: Taunt, Encore, Confuse, Paralyze, and -1 Accuracy.",
+    desc: "High-priority move that applies Taunt, Encore, confusion, paralysis, and lowers Accuracy by 1 stage.",
+    pp: 10,
+    priority: 1,
+    flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },
+    onHit(target, source) {
+      let success = false;
+      if (target.addVolatile("taunt", source)) success = true;
+      if (target.addVolatile("encore", source)) success = true;
+      if (target.addVolatile("confusion", source)) success = true;
+      if (target.setStatus("par", source)) success = true;
+      if (this.boost({ accuracy: -1 }, target, source)) success = true;
+      if (!success) return false;
+    },
+    secondary: null,
+    target: "normal",
+    type: "Dark",
+    contestType: "Clever"
+  },
+// Custom move: spread Fairy attack; never misses in Misty Terrain if grounded.
+blossombarrage: {
+    num: 20006,
+    accuracy: 80,
+    basePower: 100,
+    category: "Special",
+    name: "Blossom Barrage",
+    shortDesc: "Hits all adjacent foes. Never misses in Misty Terrain if user is grounded.",
+    desc: "This move hits all adjacent opposing Pokemon. If the user is grounded and Misty Terrain is active, this move cannot miss.",
+    pp: 5,
+    priority: 0,
+    flags: { protect: 1, mirror: 1 },
+    onModifyMove(move, source) {
+      if (source.isGrounded() && this.field.isTerrain("mistyterrain")) {
+        move.accuracy = true;
+      }
+    },
+    secondary: null,
+    target: "allAdjacentFoes",
+    type: "Fairy",
+    contestType: "Beautiful"
+  },
+// Custom move: weight-based spread Psychic attack, doubled in Gravity.
+eventhorizon: {
+    num: 20007,
+    accuracy: 100,
+    basePower: 0,
+    basePowerCallback(pokemon, target) {
+      let bp;
+      const targetWeight = target.getWeight();
+      if (targetWeight >= 2000) {
+        bp = 120;
+      } else if (targetWeight >= 1000) {
+        bp = 100;
+      } else if (targetWeight >= 500) {
+        bp = 80;
+      } else if (targetWeight >= 250) {
+        bp = 60;
+      } else if (targetWeight >= 100) {
+        bp = 40;
+      } else {
+        bp = 20;
+      }
+      return bp;
+    },
+    onBasePower(basePower) {
+      if (this.field.getPseudoWeather("gravity")) {
+        return this.chainModify(2);
+      }
+    },
+    category: "Special",
+    name: "Event Horizon",
+    shortDesc: "Hits all adjacent foes; power is higher vs heavier targets. Doubled in Gravity.",
+    desc: "Hits all adjacent foes. Power is 20/40/60/80/100/120 based on target weight. If Gravity is active, power is doubled.",
+    pp: 20,
+    priority: 0,
+    flags: { protect: 1, mirror: 1, metronome: 1 },
+    secondary: null,
+    target: "allAdjacentFoes",
+    type: "Psychic",
+    contestType: "Clever"
+  },
+// Custom move: Dark strike with additional Steel effectiveness; slicing move.
+grimrevelation: {
+    num: 20008,
+    accuracy: true,
+    basePower: 70,
+    category: "Physical",
+    name: "Grim Revelation",
+    shortDesc: "Never misses. Uses Dark+Steel effectiveness. Boosted by Sharpness.",
+    desc: "This move does not check accuracy. It uses both Dark and Steel when calculating type effectiveness.",
+    pp: 10,
+    priority: 0,
+    flags: { contact: 1, protect: 1, mirror: 1, slicing: 1 },
+    onEffectiveness(typeMod, target, type, move) {
+      // Mirror Flying Press behavior, but only while the move is actually Dark-type.
+      // This avoids wrong matchups if another effect changes the move type.
+      if (move.type !== "Dark") return;
+      return typeMod + this.dex.getEffectiveness("Steel", type);
+    },
+    secondary: null,
+    target: "normal",
+    type: "Dark",
+    contestType: "Clever"
+  },
+// Custom move: 3-5 hit special attack with built-in drain on each hit.
+verdantvortex: {
+    num: 20009,
+    name: "Verdant Vortex",
+    shortDesc: "Hits 3-5 times. Heals user by 50% of damage dealt.",
+    desc: "Hits 3-5 times. The user recovers half the HP dealt as damage by each hit.",
+    type: "Grass",
+    category: "Special",
+    basePower: 25,
+    accuracy: 100,
+    pp: 15,
+    priority: 0,
+    multihit: [3, 5],
+    drain: [1, 2],
+    flags: { protect: 1, mirror: 1, metronome: 1 },
+    secondary: null,
+    target: "normal",
+    contestType: "Cool"
+  },
+// Custom move: switches to Physical if Atk > SpA, then drops Atk/SpA.
+spectralbarrage: {
+    num: 20010,
+    accuracy: 90,
+    basePower: 130,
+    category: "Special",
+    name: "Spectral Barrage",
+    shortDesc: "Becomes Physical if Atk > SpA. Lowers user's Atk and SpA by 2.",
+    desc: "This move becomes Physical if the user's Attack is higher than its Special Attack. After use, the user's Attack and Special Attack are lowered by 2 stages.",
+    pp: 5,
+    priority: 0,
+    flags: { protect: 1, mirror: 1, metronome: 1 },
+    onModifyMove(move, pokemon) {
+      if (pokemon.getStat("atk", false, true) > pokemon.getStat("spa", false, true)) {
+        move.category = "Physical";
+      }
+    },
+    self: {
+      boosts: {
+        spa: -2,
+        atk: -2
+      }
+    },
+    secondary: null,
+    target: "normal",
+    type: "Ghost",
+    contestType: "Cool"
+  },
+// Custom move: self-heal for 25% max HP, then self-confuse.
+drinkup: {
+    num: 20011,
+    name: "Drink Up",
+    shortDesc: "Heals 25% max HP, then confuses the user.",
+    desc: "The user restores 1/4 of its maximum HP and then becomes confused.",
+    accuracy: true,
+    basePower: 0,
+    pp: 10,
+    priority: 0,
+    category: "Status",
+    type: "Poison",
+    target: "self",
+    flags: { snatch: 1, metronome: 1 },
+    heal: [1, 4],
+    self: {
+      volatileStatus: "confusion"
+    },
+    secondary: null,
+    contestType: "Cute"
+  },
+// Custom move: power doubles against poisoned targets.
+venostrike: {
+    num: 20012,
+    accuracy: 100,
+    basePower: 65,
+    category: "Physical",
+    name: "Venostrike",
+    shortDesc: "Power doubles if the target is poisoned.",
+    desc: "This move's power is doubled against a poisoned target.",
+    pp: 10,
+    priority: 0,
+    flags: { protect: 1, contact: 1, mirror: 1, metronome: 1 },
+    onBasePower(basePower, pokemon, target) {
+      if (target.status === "psn" || target.status === "tox") {
+        return this.chainModify(2);
+      }
+    },
+    secondary: null,
+    target: "normal",
+    type: "Poison",
+    contestType: "Tough"
+  },
+// Custom move: ignores target defensive and evasion stat changes.
+phantomstrike: {
+    num: 20013,
+    accuracy: 100,
+    basePower: 80,
+    category: "Physical",
+    name: "Phantom Strike",
+    shortDesc: "Ignores target Defense boosts and Evasion.",
+    desc: "Ignores the target's Defense stat boosts and Evasion stat changes when calculating damage and accuracy.",
+    pp: 10,
+    priority: 0,
+    flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },
+    ignoreDefensive: true,
+    ignoreEvasion: true,
+    secondary: null,
+    target: "normal",
+    type: "Ghost",
+    contestType: "Cool"
+  },
+// Custom move: spread Water attack with burn chance.
+boilinggrasp: {
+    num: 20014,
+    accuracy: 90,
+    basePower: 90,
+    pp: 5,
+    category: "Physical",
+    priority: 0,
+    type: "Water",
+    target: "allAdjacentFoes",
+    flags: { protect: 1, contact: 1, mirror: 1, metronome: 1 },
+    secondary: {
+      chance: 30,
+      status: "brn"
+    },
+    name: "Boiling Grasp",
+    shortDesc: "30% chance to burn adjacent foes.",
+    desc: "Has a 30% chance to burn each adjacent opposing Pokemon.",
+    contestType: "Tough"
+  },
+// Custom move: traps target and may burn.
+fangtrap: {
+    num: 20015,
+    name: "Fang Trap",
+    shortDesc: "30% chance to burn and traps the target.",
+    desc: "Has a 30% chance to burn the target and traps it for 4-5 turns.",
+    type: "Fire",
+    category: "Physical",
+    basePower: 85,
+    accuracy: 95,
+    pp: 10,
+    priority: 0,
+    flags: { protect: 1, mirror: 1, metronome: 1 },
+    volatileStatus: "partiallytrapped",
+    secondary: {
+      chance: 30,
+      status: "brn"
+    },
+    target: "normal",
+    onHit(target) {
+      this.add("-message", `${target.name} is trapped between charring fangs!`);
+    },
+    contestType: "Tough"
+  },
+// Custom move: two-hit Ice move with smart targeting support.
+twincicles: {
+    num: 20016,
+    name: "Twincicles",
+    shortDesc: "Hits 2x. In Doubles, can hit separate targets if possible.",
+    desc: "Hits twice. In Doubles, this move can target two different adjacent foes when possible.",
+    type: "Ice",
+    category: "Special",
+    basePower: 50,
+    accuracy: 100,
+    pp: 10,
+    priority: 0,
+    flags: { protect: 1, mirror: 1, metronome: 1 },
+    multihit: 2,
+    smartTarget: true,
+    target: "normal",
+    onPrepareHit(target, source) {
+      this.add("-message", `${source.name} launches twin icicles!`);
+    },
+    secondary: null,
+    contestType: "Beautiful"
+  },
+// Custom move: uses higher offensive stat, stronger vs Electric, strips Electric typing.
+shortcircuit: {
+    num: 20017,
+    name: "Short Circuit",
+    shortDesc: "Uses higher Atk/SpA. Stronger vs Electric. Removes Electric type from both if it hits an Electric target.",
+    desc: "This move becomes Physical if the user's Attack is higher than its Special Attack. It is super effective against Electric types. If it hits an Electric-type target, Electric typing is removed from both the target and the user.",
+    type: "Electric",
+    category: "Special",
+    basePower: 65,
+    accuracy: true,
+    pp: 10,
+    priority: 0,
+    flags: { protect: 1, mirror: 1, metronome: 1 },
+    target: "normal",
+    onModifyMove(move, source) {
+      const atk = source.getStat("atk", false, true);
+      const spa = source.getStat("spa", false, true);
+      move.category = atk > spa ? "Physical" : "Special";
+    },
+    onEffectiveness(typeMod, target, type) {
+      if (type === "Electric") return typeMod + 1;
+    },
+    onHit(target, source) {
+      if (!target.hasType("Electric")) return;
+      const stripElectric = (mon) => {
+        const types = mon.getTypes();
+        if (!types.includes("Electric")) return;
+        const newTypes = types.filter(t => t !== "Electric");
+        if (!newTypes.length) newTypes.push("Normal");
+        mon.setType(newTypes);
+        this.add("-start", mon, "typechange", newTypes.join("/"), "[from] move: Short Circuit");
+      };
+      stripElectric(target);
+      stripElectric(source);
+    },
+    secondary: null,
+    contestType: "Clever"
+  },
+// Custom move: high-power slicing Ice attack that ignores key defensive modifiers.
+chillelagh: {
+    num: 20018,
+    accuracy: 100,
+    basePower: 120,
+    category: "Physical",
+    name: "Chillelagh",
+    shortDesc: "Ignores target Evasion and Defense boosts.",
+    desc: "Ignores the target's Evasion and Defense stat changes when attacking.",
+    pp: 10,
+    priority: 0,
+    flags: { contact: 1, protect: 1, mirror: 1, metronome: 1, slicing: 1 },
+    ignoreEvasion: true,
+    ignoreDefensive: true,
+    secondary: null,
+    target: "normal",
+    type: "Ice",
+    contestType: "Cool"
+  },
+// Custom move: Physical Ghost move that uses the user's SpD for damage.
+etherealpress: {
+    num: 20019,
+    name: "Ethereal Press",
+    shortDesc: "Uses the user's SpD stat to deal damage.",
+    desc: "This move uses the user's Special Defense stat when calculating damage.",
+    accuracy: 100,
+    basePower: 90,
+    pp: 10,
+    priority: 0,
+    category: "Physical",
+    type: "Ghost",
+    target: "normal",
+    flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },
+    overrideOffensiveStat: "spd",
+    secondary: null,
+    contestType: "Cool"
+  },
+// Custom move: guaranteed self SpA boost on hit.
+aetherpulse: {
+    num: 20020,
+    accuracy: 100,
+    basePower: 60,
+    category: "Special",
+    isNonstandard: "Past",
+    name: "Aether Pulse",
+    shortDesc: "Always raises the user's Sp. Atk by 1.",
+    desc: "Has a 100% chance to raise the user's Special Attack by 1 stage.",
+    pp: 10,
+    priority: 0,
+    flags: { protect: 1, mirror: 1, metronome: 1 },
+    secondary: {
+      chance: 100,
+      self: {
+        boosts: {
+          spa: 1
+        }
+      }
+    },
+    target: "normal",
+    type: "Flying",
+    contestType: "Tough"
+  },
+// Custom move: heavy Poison strike with strong self Atk drop.
+corrouxrampage: {
+    num: 20021,
+    accuracy: 90,
+    basePower: 130,
+    category: "Physical",
+    name: "Corroux Rampage",
+    pp: 5,
+    priority: 0,
+    flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },
+    self: {
+      boosts: {
+        atk: -2
+      }
+    },
+    target: "normal",
+    type: "Poison",
+    shortDesc: "Lowers the user's Attack by 2 stages.",
+    desc: "After using this move, the user's Attack is lowered by 2 stages.",
+    secondary: null,
+    contestType: "Tough"
+  },
+// Custom move: Rock spread attack whose damage scales with the user's current HP.
+tectonicsurge: {
+    num: 20022,
+    name: "Tectonic Surge",
+    shortDesc: "Power scales with user's current HP. In Singles at full HP, damage is 0.75x.",
+    desc: "Damage scales by the user's current HP ratio. If used in Singles while at full HP, damage is multiplied by 0.75.",
+    accuracy: 90,
+    basePower: 150,
+    category: "Special",
+    pp: 5,
+    priority: 0,
+    flags: { protect: 1, mirror: 1, metronome: 1 },
+    onBasePower(basePower, pokemon) {
+      if (!pokemon?.maxhp) return;
+      const hpRatio = pokemon.hp / pokemon.maxhp;
+      let modifier = hpRatio;
+      return this.chainModify(modifier);
+    },
+    target: "allAdjacentFoes",
+    type: "Rock",
+    secondary: null,
+    contestType: "Tough"
+  },
+  royaldecree: {
+    num: 20023,
+    accuracy: true,
+    basePower: 0,
+    category: "Status",
+    name: "Royal Decree",
+    pp: 20,
+    priority: 5,
+    flags: { bypasssub: 1, noassist: 1, failcopycat: 1, cantusetwice: 1 },
+    volatileStatus: "royaldecree",
+    onTryHit(target) {
+      if (!target.newlySwitched && !this.queue.willMove(target))
+        return false;
+    },
+    condition: {
+      duration: 1,
+      onStart(target, source) {
+        this.add("-singleturn", target, "Royal Decree", "[of] " + source);
+      },
+      onModifyPriority(priority, pokemon, target, move) {
+        if (move.category !== "Status") return priority + 1;
+      },
+      onBasePowerPriority: 10,
+      onBasePower(basePower) {
+        this.debug("Boosting from Royal Decree: 1.25x");
+        return this.chainModify(1.25);
+      }
+    },
+    secondary: null,
+    target: "adjacentAlly",
+    type: "Normal",
+    zMove: { effect: "clearnegativeboost" },
+    contestType: "Clever"
+  },
+  outletdrain: {
+    num: 20024,
+    accuracy: 100,
+    basePower: 70,
+    category: "Physical",
+    name: "Outlet Drain",
+    pp: 10,
+    priority: 0,
+    flags: { protect: 1, mirror: 1, heal: 1, metronome: 1, contact: 1, },
+    drain: [1, 2],
+    secondary: null,
+    target: "normal",
+    type: "Ghost",
+    contestType: "Clever"
+  },
 };
