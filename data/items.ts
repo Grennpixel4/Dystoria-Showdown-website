@@ -4983,7 +4983,6 @@ onStart(pokemon) {
 			);
 		}
 	},
-		},
 		num: 882,
 		gen: 7,
 	},
