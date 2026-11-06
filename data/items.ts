@@ -4982,7 +4982,7 @@ onStart(pokemon) {
 				this.dex.items.get('psychicseed')
 			);
 		}
-	},: 1,
+	},
 		},
 		num: 882,
 		gen: 7,
