@@ -6252,7 +6252,7 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		isNonstandard: "Custom",
 		tier: "Illegal",
 	},
-	green: {
+	skernel: {
 		tier: "PU",
 		doublesTier: "(DUU)",
 		natDexTier: "RU",

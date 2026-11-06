@@ -100542,7 +100542,7 @@ export const Learnsets: import('../sim/dex-species').LearnsetDataTable = {
 			{generation: 5, level: 47, moves: ["darkpulse", "flamethrower", "hyperbeam", "icebeam"]},
 		],
 	},
-	green: {
+	skernel: {
 		learnset: {
 			acidspray: ["9M"],
 			amnesia: ["8M", "7E", "6E", "5E", "4E"],
