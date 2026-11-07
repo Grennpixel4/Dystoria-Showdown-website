@@ -6287,4 +6287,19 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
+	nidoranmdystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	nidorinodystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "NFE",
+	},
+	nidokingdystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	}
 };
