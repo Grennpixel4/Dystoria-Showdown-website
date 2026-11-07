@@ -2725,7 +2725,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 	},
 	hitmonchandystorian: {
 		num: 107,
-		name: "Hitmonchan",
+		name: "Hitmonchan-Dystorian",
 		types: ["Ghost", "Fighting"],
 		gender: "M",
 		formes: "Dystorian",
