@@ -21181,10 +21181,10 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 0.6,
 		weightkg: 6.7,
 		color: "Green",
-		evos: "skorn",
+		evos: ["Skorn"], // <---- FUCK YOU
 		eggGroups: ["Grass"],
 	},
-	skorn: {
+	skorn: { 
 		num: 1481,
 		name: "Skorn",
 		types: ["Grass", "Normal"],
@@ -21194,7 +21194,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 1.6,
 		weightkg: 49,
 		color: "Green",
-		prevo: "skernel",
+		prevo: "Skernel",
 		eggGroups: ["Grass"],
 	},
 	salachad: {
@@ -21207,7 +21207,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 1.4,
 		weightkg: 55,
 		color: "Purple",
-		prevo: "salandit",
+		prevo: "Salandit",
 		eggGroups: ["Dragon", "Monster"],
 	},
 	celestyta: {
