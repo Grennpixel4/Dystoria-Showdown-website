@@ -5719,7 +5719,9 @@ export const Abilities: import('../sim/dex-abilities').AbilityDataTable = {
     flags: {},
     name: "Shadow Walker",
     rating: 3,
-    num: 10001
+    num: 10001,
+	shortDesc: "Boost speed in fog.",
+		desc: "Boosts speed in fog.",
   },
 
 	scarfdown: {
