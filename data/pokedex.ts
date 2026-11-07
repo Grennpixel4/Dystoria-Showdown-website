@@ -1097,7 +1097,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 	},
 	nidokingdystorian: {
 		num: 34,
-		name: "Nidoking",
+		name: "Nidoking-Dystorian",
 		types: ["Ghost", "Dark"],
 		gender: "M",
 		baseSpecies: "Nidoking",
