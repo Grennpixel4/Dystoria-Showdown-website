@@ -6255,6 +6255,21 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	skernel: {
 		tier: "PU",
 		doublesTier: "(DUU)",
-		natDexTier: "RU",
+		natDexTier: "LC",
 	},
+	skorn: {
+		tier: "PU",
+		doublesTier: "(DUU)",
+		natDexTier: "OU",
+	},
+	salachad: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	celestyta: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	}
 };
