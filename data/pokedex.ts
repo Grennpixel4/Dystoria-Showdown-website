@@ -2030,7 +2030,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		baseSpecies: "Ponyta",
 		forme: "Dystorian",
 		types: ["Dark", "Ghost"],
-		baseStats: { hp: 55, atk: 75, def: 5, spa: 75, spd: 60, spe: 95 },
+		baseStats: { hp: 55, atk: 75, def: 50, spa: 75, spd: 60, spe: 95 },
 		abilities: {0: "Chilling Neigh", 1: "Grim Neigh", H: "Defiant"},
 		heightm: 1.0,
 		weightkg: 27,
