@@ -5090,7 +5090,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 	},
 	tyroguedystorian: {
 		num: 236,
-		name: "Tyrogue",
+		name: "Tyrogue-Dystorian",
 		types: ["Fighting"],
 		forme: "Dystorian",
 		genderRatio: {M: 0.5, F: 0.5},
