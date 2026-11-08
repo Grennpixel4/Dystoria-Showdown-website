@@ -10913,7 +10913,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 	crustledystorian: {
 		num: 558,
 		name: "Crustle-Dystorian",
-		types: {"Water", "Poison"},
+		types: ["Water", "Poison"],
 		forme: "Dystorian",
 		baseSpecies: "Crustle",
 		baseStats: { hp: 80, atk: 120, def: 100, spa: 35, spd: 85, spe: 65 },

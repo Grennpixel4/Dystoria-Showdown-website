@@ -6414,17 +6414,17 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	},
 	crustledystorian: {
 		tier: "PU",
-		"doublesTier", "(DUU)",
+		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
 	wimpoddystorian: {
 		tier: "PU",
-		"doublesTier", "(DUU)",
+		"doublesTier": "(DUU)",
 		natDexTier: "LC",
 	},
 	golisopoddystorian: {
 		tier: "PU",
-		"doublesTier", "(DUU)",
+		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
 	
