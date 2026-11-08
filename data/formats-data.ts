@@ -6406,6 +6406,27 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		tier: "PU",
 		"doublesTier": "(DUU)",
 		natDexTier: "OU"
-	}
+	},
+	dwebbledystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	crustledystorian: {
+		tier: "PU",
+		"doublesTier", "(DUU)",
+		natDexTier: "OU",
+	},
+	wimpoddystorian: {
+		tier: "PU",
+		"doublesTier", "(DUU)",
+		natDexTier: "LC",
+	},
+	golisopoddystorian: {
+		tier: "PU",
+		"doublesTier", "(DUU)",
+		natDexTier: "OU",
+	},
+	
 };
 
