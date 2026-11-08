@@ -6437,11 +6437,6 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "NFE",
 	},
-	celestyta: {
-		tier: "PU",
-		"doublesTier": "(DUU)",
-		natDexTier: "LC",
-	},
 	aetherdash: {
 		tier: "PU",
 		"doublesTier": "(DUU)",
