@@ -6402,5 +6402,10 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
+	dusknoirmega: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	}
 };
 
