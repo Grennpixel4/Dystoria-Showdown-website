@@ -6487,6 +6487,21 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
+	ironstratus: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	ironlullaby: {
+		tier: "PU",
+		"doubleTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	irongrinder: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
 	
 };
 
