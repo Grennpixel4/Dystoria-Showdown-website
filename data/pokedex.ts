@@ -21812,7 +21812,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 	},
 	ironlullaby: {
 		num: 1502,
-		name: "Iron Stratus",
+		name: "Iron Lullaby",
 		types: ["Normal", "Steel"],
 		gender: "N",
 		baseStats: { hp: 64, atk: 86, def: 90, spa: 110, spd: 102, spe: 118 },
