@@ -6452,6 +6452,21 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
+	ironredundancy: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	ironbastion :{
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	anticore: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
 	
 };
 
