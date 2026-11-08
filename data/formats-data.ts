@@ -6312,5 +6312,19 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
-	
+	ponytadystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	gastlydystorian: {
+		tier: "PU",
+		"doubleTiers": "(DUU)",
+		natDexTier: "LC",
+	},
+	haunterdystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
 };
