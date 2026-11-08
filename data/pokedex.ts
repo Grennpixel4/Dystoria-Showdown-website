@@ -21785,7 +21785,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 	},
 	hionishihammaxe: {
 		num: 1500,
-		name: "Hionishi-Tonfa",
+		name: "Hionishi-Hammaxe",
 		types: ["Fighting", "Dark"],
 		genderRatio: {M: 0.5, F: 0.5},
 		baseStats: { hp: 100, atk: 120, def: 135, spa: 70, spd: 95, spe: 80 },
