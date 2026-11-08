@@ -6362,5 +6362,25 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "LC",
 	},
+	tyroguedystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	larvitardystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	pupitardystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "NFE",
+	},
+	tyranitardystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
 	
 };
