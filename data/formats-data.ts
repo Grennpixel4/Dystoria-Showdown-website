@@ -6325,7 +6325,7 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	haunterdystorian: {
 		tier: "PU",
 		"doublesTier": "(DUU)",
-		natDexTier: "OU",
+		natDexTier: "NFE",
 	},
 	hitmonleedystorian: {
 		tier: "PU",
@@ -6435,7 +6435,23 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	drakloakdystorian: {
 		tier: "PU",
 		"doublesTier": "(DUU)",
+		natDexTier: "NFE",
+	},
+	celestyta: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	aetherdash: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
+	ironvestige: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	
 };
 
