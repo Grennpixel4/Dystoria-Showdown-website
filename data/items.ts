@@ -8253,7 +8253,7 @@ onStart(pokemon) {
 		megaStone: {"Dusknoir": "Dusknoir-Mega"},
 		itemUser: ["Dusknoir"],
 		onTakeItem(item, source) {
-			return !item.megastone?.[source.baseSpecies.baseSpecies];
+			return !item.megaStone?.[source.baseSpecies.baseSpecies];
 		},
 		num: -1001,
 		gen: 9,
