@@ -1403,7 +1403,7 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	sunflora: {
 		tier: "ZU",
 		doublesTier: "(DUU)",
-		natDexTier: "RU",
+		natDexTier: "NFE",
 	},
 	yanma: {
 		tier: "NFE",
@@ -6502,6 +6502,26 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
-	
+	sunfauna: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	horridge: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	doomblade: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "NFE",
+	},
+	grimslash: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+
 };
 
