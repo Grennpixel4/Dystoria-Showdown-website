@@ -21924,5 +21924,29 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		evoItem: "Shiny Stone",
 		eggGroups: ["Fairy"],
 	},
-
+	ignivarg: {
+		num: 1512,
+		name: "Ignivarg",
+		types: ["Fire", "Ice"],
+		baseStats: { hp: 47, atk: 64, def: 45, spa: 34, spd: 65, spe: 55},
+		abilities: { 0: "Fur Coat", 1: "Prankster" , H: "Quick Feet"},
+		heightm: 0.9,
+		weightkg: 23.7,
+		evo: ["Skoldurn"],
+		eggGroups: ["Field"],
+	},
+	skoldurn: {
+		num: 1513,
+		name: "Skoldurn",
+		types: ["Fire", "Ice"],
+		baseStats: { hp: 90, atk: 115, def: 70, spa: 93, spd: 125, spe: 80 },
+		abilities: { 0: "Fur Coat", 1: "Snow Warning", H: "Slush Rush" },
+		heightm: 1.5,
+		weightkg: 96.5,
+		prevo: "Ignivarg",
+		evoType: "levelMove",
+		evoMove: "Temper Flare",
+		eggGroups: ["Field"],
+	},
+	
 };
