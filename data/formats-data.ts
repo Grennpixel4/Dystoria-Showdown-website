@@ -1927,7 +1927,7 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	shedinja: {
 		isNonstandard: "Past",
 		tier: "Illegal",
-		natDexTier: "RU",
+		natDexTier: "NFE",
 	},
 	whismur: {
 		isNonstandard: "Past",
@@ -6552,6 +6552,21 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
-	
+	orinari: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	kachoron: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDextier: "OU",
+	},
+	shemurai: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+
 };
 
