@@ -6539,7 +6539,7 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	},
 	qilinasus: {
 		tier: "PU",
-		"doublesTier:" "(DUU)",
+		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
 	
