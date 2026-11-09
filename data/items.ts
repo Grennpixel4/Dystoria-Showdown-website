@@ -8257,6 +8257,6 @@ onStart(pokemon) {
 		},
 		num: -1001,
 		gen: 9,
-		isNonstandard: "Custom",
+		isNonstandard: "Past",
 	}
 };
