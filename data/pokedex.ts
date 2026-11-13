@@ -2657,7 +2657,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		weightkg: 34,
 		color: "Purple",
 		prevo: "Cubone",
-		evo: ["Skelaymore-Alola"],
+		evos: ["Skelaymore-Alola"],
 		evoLevel: 28,
 		evoCondition: "at night",
 		evoRegion: "Alola",
