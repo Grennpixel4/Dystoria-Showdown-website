@@ -22039,7 +22039,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 0.8,
 		weightkg: 12.5,
 		color: "Black",
-		evos: "Loplushie",
+		evos: ["Loplushie"],
 		eggGroups: ["Human-like", "Fairy"],
 	},
 	loplushie: {
