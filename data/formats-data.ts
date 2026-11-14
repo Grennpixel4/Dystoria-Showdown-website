@@ -6622,6 +6622,21 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
+	geshi: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	haenshi: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "NFE",
+	},
+	blazegor: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
 	
 };
 
