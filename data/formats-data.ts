@@ -6637,6 +6637,21 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU"
 	},
+	trickygems: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	lotuzen: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	charringfangs: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
 	
 };
 

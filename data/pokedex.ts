@@ -4300,6 +4300,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		weightkg: 1,
 		color: "Green",
 		prevo: "Hoppip-Dystorian",
+		evo: ["Lotuzen"],
 		evoLevel: 18,
 		eggGroups: ["Grass", "Fairy"],
 	},
@@ -21685,6 +21686,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 3.3,
 		weightkg: 91.2,
 		color: "Gray",
+		tags: ["Paradox"],
 		eggGroups: ["Undiscovered"],
 	},
 	ironredundancy: {
@@ -21697,6 +21699,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 2.2,
 		weightkg: 60,
 		color: "Gray",
+		tags: ["Paradox"],
 		eggGroups: ["Undiscovered"],
 	},
 	ironbastion: {
@@ -21709,6 +21712,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 3,
 		weightkg: 53,
 		color: "Gray",
+		tags: ["Paradox"],
 		eggGroups: ["Undiscovered"],
 	},
 	anticore: {
@@ -21801,6 +21805,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 3,
 		weightkg: 3,
 		color: "Gray",
+		tags: ["Paradox"],
 		eggGroups: ["Undiscovered"],
 	},
 	ironlullaby: {
@@ -21813,6 +21818,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 1.06,
 		weightkg: 5.8,
 		color: "Gray",
+		tags: ["Paradox"],
 		eggGroups: ["Undiscovered"],
 	},
 	irongrinder: {
@@ -21825,6 +21831,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 0.81,
 		weightkg: 205,
 		color: "Gray",
+		tags: ["Paradox"],
 		eggGroups: ["Undisovered"],
 	},
 	sunfauna: {
@@ -22195,5 +22202,45 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		evoItem: "Spell Tag",
 		eggGroups: ["Amorphous"],
 	},
-	
+	trickygems: {
+		num: 1530,
+		name: "Tricky Gems",
+		types: ["Dark", "Ground"],
+		gender: "N",
+		baseStats: { hp: 91, atk: 95, def: 93, spa: 89, spd: 137, spe: 65 },
+		abilities: { 0: "Protosynthesis" },
+		heightm: 2,
+		weightkg: 260,
+		color: "Brown",
+		tags: ["Paradox"],
+		eggGroups: ["Undiscovered"],
+	},
+	lotuzen: {
+		num: 1531,
+		name: "Lotuzen",
+		types: ["Grass", "Fairy"],
+		baseStats: { hp: 80, atk: 25, def: 73, spa: 89, spd: 81, spe: 112 },
+		abilities: { 0: "Flower Veil", 1: "Natural Cure", H: "Misty Surge" },
+		heightm: 2,
+		weightkg: 33,
+		color: "Green",
+		prevo: "Skiploom-Dystorian",
+		evoLevel: 27,
+		evoCondition: "During the day.",
+		eggGroups: ["Grass", "Fairy"],
+	},
+	charringfangs: {
+		num: 1532,
+		name: "Charring Fangs",
+		types: ["Fire", "Dragon"],
+		gender: "N",
+		baseStats: { hp: 117, atk: 139, def: 89, spa: 111, spd: 69, spe: 45 },
+		abilities: { 0: "Protosynthesis" },
+		heightm: 5.3,
+		weightkg: 489,
+		color: "Red",
+		tags: ["Paradox"],
+		eggGroups: ["Undiscovered"],
+	},
+
 };
