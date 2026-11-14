@@ -6667,6 +6667,35 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
-	
+	mortapult: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	akulbore: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	mentamite: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	mentrattel: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
+	cherug: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	shabluraphim: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	}
 };
 
