@@ -2478,7 +2478,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		heightm: 0.4,
 		weightkg: 6.5,
 		color: "Red",
-		evos: ["Kingler"],
+		evos: ["Kingler", "Crustherm"],
 		eggGroups: ["Water 3"],
 	},
 	kingler: {
@@ -6002,6 +6002,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		color: "Yellow",
 		prevo: "Nincada",
 		evoLevel: 20,
+		evos: ["Ninjinsen"],
 		eggGroups: ["Bug"],
 	},
 	shedinja: {
@@ -22126,5 +22127,33 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		evoItem: "Shiny Stone",
 		eggGroups: ["Fairy", "Human-Like"],
 	},
-	
+	ninjinsen: {
+		num: 1525, 
+		name: "Ninjinsin",
+		types: ["Bug", "Flying"],
+		baseStats: { hp: 61, atk: 105, def: 50, spa: 75, spd: 55, spe: 160 },
+		abilities: { 0: "Speed Boost" H: "Sharpness" },
+		heightm: 0.9,
+		weightkg: 16,
+		prevo: "Ninjask",
+		evoType: "trade",
+		evoItem: "Razor Claw",
+		evoCondition: "During the day",
+		eggGroups: ["Bug"],
+	},
+	crustherm: {
+		num: 1526,
+		name: "Crustherm",
+		types: ["Fire", "Water"],
+		baseStats: { hp: 65, atk: 110, def: 55, spa: 100, spd: 65, spe: 80 },
+		abilities: { 0: "Water Absorb", 1: "Long Reach", H: "Sheer Force" },
+		heightm: 4,
+		weightkg: 100,
+		color: "Brown",
+		prevo: "Krabby",
+		evoLevel: 28,
+		evoCondition: "In a Warm Ocean",
+		eggGroups: ["Water 3"],
+	},
+
 };
