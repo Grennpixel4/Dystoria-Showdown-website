@@ -22132,7 +22132,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		name: "Ninjinsin",
 		types: ["Bug", "Flying"],
 		baseStats: { hp: 61, atk: 105, def: 50, spa: 75, spd: 55, spe: 160 },
-		abilities: { 0: "Speed Boost" H: "Sharpness" },
+		abilities: { 0: "Speed Boost", H: "Sharpness" },
 		heightm: 0.9,
 		weightkg: 16,
 		prevo: "Ninjask",
