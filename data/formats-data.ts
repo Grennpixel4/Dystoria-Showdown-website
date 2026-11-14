@@ -6597,6 +6597,21 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
+	valpixie: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC",
+	},
+	valkaiden: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "NFE",
+	},
+	valkhalla: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU",
+	},
 	
 };
 
