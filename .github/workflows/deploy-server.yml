@@ -1,30 +1,67 @@
 name: Deploy server
 
 on:
-  push:
-    branches: [main]
+  schedule:
+    - cron: '0,30 9-12 * * *'
   workflow_dispatch:
     inputs:
       ref:
-        description: Commit SHA to deploy (blank = this commit). Use an old SHA to roll back.
+        description: Commit SHA to deploy (blank = latest main). Use an old SHA to roll back.
         required: false
       hotpatch:
         description: Don't restart; a staff member runs /hotpatch afterwards
         type: boolean
         default: false
+      wait_for_idle:
+        description: Skip the restart if battles are in progress
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 concurrency:
   group: deploy-server
   cancel-in-progress: false
 
 jobs:
-  build:
+  check:
     if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.compare.outputs.changed }}
+      sha: ${{ steps.compare.outputs.sha }}
+    steps:
+      - name: Compare the VPS with the target commit
+        id: compare
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          HOST: ${{ secrets.VPS_HOST }}
+          TARGET: ${{ inputs.ref || github.sha }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+          running=$(ssh -o BatchMode=yes showdown@"$HOST" status)
+          echo "server is running: $running"
+          echo "target commit:     $TARGET"
+          echo "sha=$TARGET" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "$running" = "$TARGET" ]; then
+            echo "Nothing new to deploy."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: check
+    if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref || github.sha }}
+          ref: ${{ needs.check.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -33,24 +70,44 @@ jobs:
       - run: node build
 
   deploy:
-    needs: build
+    needs: [check, build]
     runs-on: ubuntu-latest
     environment: production
     env:
-      SHA: ${{ inputs.ref || github.sha }}
+      SHA: ${{ needs.check.outputs.sha }}
     steps:
       - name: Deploy on the VPS
+        id: ssh
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           HOST: ${{ secrets.VPS_HOST }}
-          MODE: ${{ inputs.hotpatch && ' hotpatch' || '' }}
+          MODE: ${{ inputs.hotpatch && ' hotpatch' || ((github.event_name == 'schedule' || inputs.wait_for_idle) && ' whenidle' || '') }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H "$HOST" >> ~/.ssh/known_hosts
+          set +e
           ssh -o BatchMode=yes showdown@"$HOST" "$SHA$MODE"
+          code=$?
+          set -e
+          if [ "$code" -eq 75 ]; then
+            echo "Battles are in progress. The next scheduled run will try again."
+            echo "deployed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          [ "$code" -eq 0 ] || exit "$code"
+          echo "deployed=true" >> "$GITHUB_OUTPUT"
+      - name: Mark this commit as live
+        if: steps.ssh.outputs.deployed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          full=$(gh api "repos/${{ github.repository }}/commits/$SHA" --jq .sha)
+          gh api -X PATCH "repos/${{ github.repository }}/git/refs/tags/live" -f sha="$full" -F force=true \
+            || gh api -X POST "repos/${{ github.repository }}/git/refs" -f ref=refs/tags/live -f sha="$full"
       - name: Rebuild the client from this server commit
+        if: steps.ssh.outputs.deployed == 'true'
         env:
           GH_TOKEN: ${{ secrets.CLIENT_DISPATCH_TOKEN }}
         run: |
