@@ -230,6 +230,13 @@ exports.replaysdb = process.env.REPLAYS_DB_PASSWORD ? {
 
 exports.disableroomlogdb = true;
 
+exports.customhttpresponse = (req, res) => {
+	if (!/^\/(?:[A-Za-z0-9][A-Za-z0-9-]*\/?)?$/.test(req.url || '')) return false;
+	res.writeHead(302, { Location: `https://${exports.routes.client}${req.url}` });
+	res.end();
+	return true;
+};
+
 /**
  * crashguardemail - if the server has been running for more than an hour
  *   and crashes, send an email using these settings, rather than locking down
