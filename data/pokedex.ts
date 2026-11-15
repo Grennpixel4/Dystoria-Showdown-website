@@ -9135,6 +9135,8 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		evoType: "trade",
 		evoItem: "Reaper Cloth",
 		eggGroups: ["Amorphous"],
+		otherFormes: ["Dusknoir-Mega"],
+		formeOrder: ["Dusknoir", "Dusknoir-Mega"],
 	},
 	dusknoirmega: {
 		num: 477,
@@ -13051,7 +13053,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		eggGroups: ["Fairy"],
 		otherFormes: ["Floette-Eternal", "Floette-Mega"],
 		cosmeticFormes: ["Floette-Blue", "Floette-Orange", "Floette-White", "Floette-Yellow"],
-		formeOrder: ["Floette", "Floette-Yellow", "Floette-Orange", "Floette-Blue", "Floette-White", "Floette-Eternal", "Floette-Mega"],
+		formeOrder: ["Floette", "Floette-Mega", "Floette-Yellow", "Floette-Orange", "Floette-Blue", "Floette-White", "Floette-Eternal"],
 	},
 	floetteeternal: {
 		num: 670,

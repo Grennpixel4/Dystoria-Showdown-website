@@ -758,7 +758,14 @@ export class TeamValidator {
 					problems.push(`${name} needs to have an ability.`);
 				} else if (!Object.values(species.abilities).includes(ability.name)) {
 					if (tierSpecies.abilities[0] === ability.name) {
-						set.ability = species.abilities[0];
+						// A Mega Stone or forme change means the set's ability is the forme's own
+						// ability (Garchomp-Mega-Z's Levitate, Froslass-Mega's Snow Warning), not a
+						// guess at the base forme's first ability. Only fall back when the two agree.
+						if (species.abilities[0] !== tierSpecies.abilities[0]) {
+							// leave the set's ability alone: it is the forme's, and legal
+						} else {
+							set.ability = species.abilities[0];
+						}
 					} else {
 						problems.push(`${name} can't have ${set.ability}.`);
 					}

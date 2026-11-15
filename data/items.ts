@@ -2211,8 +2211,8 @@ export const Items: import('../sim/dex-items').ItemDataTable = {
 	floettite: {
 		name: "Floettite",
 		spritenum: 562,
-		megaStone: { "Floette-Eternal": "Floette-Mega" },
-		itemUser: ["Floette-Eternal"],
+		megaStone: { "Floette-Eternal": "Floette-Mega", "Floette": "Floette-Mega" },
+		itemUser: ["Floette-Eternal", "Floette"],
 		onTakeItem(item, source) {
 			return !item.megaStone || (!item.megaStone[source.baseSpecies.name] &&
 				!Object.values(item.megaStone).includes(source.baseSpecies.name));
@@ -8257,6 +8257,5 @@ onStart(pokemon) {
 		},
 		num: -1001,
 		gen: 9,
-		isNonstandard: "Past",
 	}
 };
