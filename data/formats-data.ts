@@ -5099,6 +5099,11 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		tier: "Illegal",
 		natDexTier: "OU",
 	},
+	falinksdystorian: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
 	pincurchin: {
 		tier: "ZU",
 		doublesTier: "(DUU)",
@@ -6696,6 +6701,60 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		tier: "PU",
 		"doublesTier": "(DUU)",
 		natDexTier: "OU"
-	}
+	},
+	ashenooze: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
+	heavymandible: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
+	ironstar: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
+	drifbulb: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC"
+	},
+	driflight: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
+	ironbelly: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
+	moltik: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC"
+	},
+	lavantula: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
+	pyrovoi: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
+	urnomite: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "LC"
+	},
+	cryptroach: {
+		tier: "PU",
+		"doublesTier": "(DUU)",
+		natDexTier: "OU"
+	},
 };
-
