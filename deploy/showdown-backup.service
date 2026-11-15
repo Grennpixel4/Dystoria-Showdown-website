@@ -1,0 +1,7 @@
+[Unit]
+Description=Back up the Dystoria replay database and server data
+
+[Service]
+Type=oneshot
+User=showdown
+ExecStart=/bin/bash /home/showdown/backup.sh

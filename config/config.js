@@ -13,7 +13,7 @@ exports.port = 8000;
  *
  * @type {string}
  */
-exports.bindaddress = '0.0.0.0';
+exports.bindaddress = '127.0.0.1';
 
 /**
  * wsdeflate - compresses WebSocket messages
@@ -82,7 +82,7 @@ Main's SSL deploy script from Let's Encrypt looks like:
  *   know what you are doing
  * @type {false | string[]}.
  */
-exports.proxyip = false;
+exports.proxyip = ['127.0.0.0/8'];
 
 // subprocesses - the number of child processes to use for various tasks.
 //   Can be set to `0` instead of `{...}` to stop using subprocesses, if you're running out of RAM.
@@ -212,11 +212,23 @@ Y929lRybWEiKUr+4Yw2O1W0CAwEAAQ==
  *   Don't change this setting - there aren't any other options right now
  */
 exports.routes = {
-	root: 'pokemonshowdown.com',
-	client: 'play.pokemonshowdown.com',
+	root: 'dystorialab.org',
+	client: 'play.dystorialab.org',
 	dex: 'dex.pokemonshowdown.com',
-	replays: 'replay.pokemonshowdown.com',
+	replays: 'replay.dystorialab.org',
 };
+
+exports.serverid = 'dystoria';
+
+exports.replaysdb = process.env.REPLAYS_DB_PASSWORD ? {
+	user: 'showdown',
+	password: process.env.REPLAYS_DB_PASSWORD,
+	host: '127.0.0.1',
+	port: 5432,
+	database: 'replays',
+} : null;
+
+exports.disableroomlogdb = true;
 
 /**
  * crashguardemail - if the server has been running for more than an hour
