@@ -231,7 +231,7 @@ exports.replaysdb = process.env.REPLAYS_DB_PASSWORD ? {
 exports.disableroomlogdb = true;
 
 exports.customhttpresponse = (req, res) => {
-	if (!/^\/(?:[A-Za-z0-9][A-Za-z0-9-]*\/?)?$/.test(req.url || '')) return false;
+	if (!/^\/(?:[A-Za-z0-9][A-Za-z0-9-]*\/?)?$/.test((req.url || '').split('?')[0])) return false;
 	res.writeHead(302, { Location: `https://${exports.routes.client}${req.url}` });
 	res.end();
 	return true;
