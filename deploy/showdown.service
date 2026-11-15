@@ -1,0 +1,15 @@
+[Unit]
+Description=Dystoria Showdown game server
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+User=showdown
+WorkingDirectory=/home/showdown/Dystoria-Showdown-website
+EnvironmentFile=/home/showdown/showdown.env
+ExecStart=/usr/bin/node pokemon-showdown start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
