@@ -22085,7 +22085,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 	p0rygone: {
 		num: 1520,
 		name: "P0rygone",
-		types: ["Normal", "Ghost"],
+		types: ["Normal", "Poison"],
 		gender: "N",
 		baseStats: { hp: 95, atk: 90, def: 110, spa: 60, spd: 100, spe: 70 },
 		abilities: { 0: "Regenerator", 1: "Corrosion", H: "Analytic" },
