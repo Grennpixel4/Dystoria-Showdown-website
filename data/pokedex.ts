@@ -5317,7 +5317,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		types: ["Water", "Electric"],
 		forme: "Dystorian",
 		baseSpecies: "Tyranitar",
-		baseStats: { hp: 100, atk: 75, def: 103, spa: 109, spd: 113, spe: 100 },
+		baseStats: { hp: 100, atk: 95, def: 103, spa: 109, spd: 113, spe: 85 },
 		abilities: { 0: "Drizzle", H: "Dragon's Maw"},
 		heightm: 2.7,
 		weightkg: 212.1,
