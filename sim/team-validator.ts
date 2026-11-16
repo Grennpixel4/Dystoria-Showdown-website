@@ -757,16 +757,11 @@ export class TeamValidator {
 				if (!ability.name || ability.name === 'No Ability') {
 					problems.push(`${name} needs to have an ability.`);
 				} else if (!Object.values(species.abilities).includes(ability.name)) {
-					if (tierSpecies.abilities[0] === ability.name) {
-						// A Mega Stone or forme change means the set's ability is the forme's own
-						// ability (Garchomp-Mega-Z's Levitate, Froslass-Mega's Snow Warning), not a
-						// guess at the base forme's first ability. Only fall back when the two agree.
-						if (species.abilities[0] !== tierSpecies.abilities[0]) {
-							// leave the set's ability alone: it is the forme's, and legal
-						} else {
-							set.ability = species.abilities[0];
-						}
-					} else {
+					// A Mega Stone or forme change means the set may carry the ability of the forme
+					// it becomes (Charizard-Mega-Y's Drought, Froslass-Mega's Snow Warning): the set
+					// is written before Mega Evolving, so there is nowhere else to put it, and the
+					// server swaps it in when the Mega Evolution happens.
+					if (!Object.values(tierSpecies.abilities).includes(ability.name)) {
 						problems.push(`${name} can't have ${set.ability}.`);
 					}
 				}

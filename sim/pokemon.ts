@@ -439,7 +439,20 @@ export class Pokemon {
 		this.storedStats = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
 		this.boosts = { atk: 0, def: 0, spa: 0, spd: 0, spe: 0, accuracy: 0, evasion: 0 };
 
-		this.baseAbility = toID(set.ability);
+		let baseAbility = toID(set.ability);
+		// A set holding a Mega Stone is written before Mega Evolving, so it may carry the
+		// ability of the forme it becomes (Charizard-Mega-Y's Drought). The battle starts in the
+		// base forme though, so it must not have that ability until the Mega Evolution happens -
+		// otherwise base Charizard brings its own sun on turn 1 without ever using the stone.
+		if (this.battle.gen > 1) {
+			const item = this.battle.dex.items.get(set.item);
+			const megaSpecies = item.megaStone ? this.battle.dex.species.get(item.megaStone[this.baseSpecies.name]) : null;
+			if (megaSpecies?.exists && Object.values(megaSpecies.abilities).includes(this.battle.dex.abilities.get(baseAbility).name) &&
+				!Object.values(this.baseSpecies.abilities).includes(this.battle.dex.abilities.get(baseAbility).name)) {
+				baseAbility = toID(this.baseSpecies.abilities['0']);
+			}
+		}
+		this.baseAbility = baseAbility;
 		this.ability = this.baseAbility;
 		this.abilityState = this.battle.initEffectState({ id: this.ability, target: this });
 
