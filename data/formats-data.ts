@@ -6340,7 +6340,7 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	hitmonchandystorian: {
 		tier: "PU",
 		"doublesTier": "(DUU)",
-		natDexTier: "OU",
+		natDexTier: "Uber",
 	},
 	hoothootdystorian: {
 		tier: "PU",
@@ -6570,12 +6570,12 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	shemurai: {
 		tier: "PU",
 		"doublesTier": "(DUU)",
-		natDexTier: "OU",
+		natDexTier: "Uber",
 	},
 	skelaymore: {
 		tier: "PU",
 		"doublesTier": "(DUU)",
-		natDexTier: "OU",
+		natDexTier: "Uber",
 	},
 	skelaymorealola: {
 		tier: "PU",
