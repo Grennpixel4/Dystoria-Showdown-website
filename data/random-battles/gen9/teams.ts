@@ -1785,6 +1785,7 @@ export class RandomTeams {
 		const typeDoubleWeaknesses: { [k: string]: number } = {};
 		const teamDetails: RandomTeamsTypes.TeamDetails = {};
 		let numMaxLevelPokemon = 0;
+		let megaCount = 0;
 
 		const pokemonList = isDoubles ? Object.keys(this.randomDoublesSets) : Object.keys(this.randomSets);
 		const [pokemonPool, baseSpeciesPool] = this.getPokemonPool(type, pokemon, isMonotype, pokemonList);
@@ -1804,6 +1805,9 @@ export class RandomTeams {
 
 			// Limit to one of each species (Species Clause)
 			if (baseFormes[species.baseSpecies]) continue;
+
+			const isMega = species.id.includes('mega');
+			if (isMega && megaCount >= 1) continue;
 
 			// Treat Ogerpon formes and Terapagos like the Tera Blast user role; reject if team has one already
 			if (['ogerpon', 'ogerponhearthflame', 'terapagos'].includes(species.id) && teamDetails.teraBlast) continue;
@@ -1909,6 +1913,8 @@ export class RandomTeams {
 			baseFormes[species.baseSpecies] = 1;
 			gensUsed.add(getGen(species));
 
+			if (isMega) megaCount++;
+			
 			// Increment type counters
 			for (const typeName of types) {
 				if (typeName in typeCount) {
