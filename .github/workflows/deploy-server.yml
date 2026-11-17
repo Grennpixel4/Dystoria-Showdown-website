@@ -1,6 +1,10 @@
 name: Deploy server
 
 on:
+  # Every push to main tries to deploy right away, but only if no battles are running.
+  push:
+    branches: [main]
+  # Fallback: if a push was skipped because of battles, retry overnight (3:00-6:30am CST).
   schedule:
     - cron: '0,30 9-12 * * *'
   workflow_dispatch:
@@ -81,7 +85,7 @@ jobs:
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           HOST: ${{ secrets.VPS_HOST }}
-          MODE: ${{ inputs.hotpatch && ' hotpatch' || ((github.event_name == 'schedule' || inputs.wait_for_idle) && ' whenidle' || '') }}
+          MODE: ${{ inputs.hotpatch && ' hotpatch' || ((github.event_name != 'workflow_dispatch' || inputs.wait_for_idle) && ' whenidle' || '') }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
@@ -92,7 +96,7 @@ jobs:
           code=$?
           set -e
           if [ "$code" -eq 75 ]; then
-            echo "Battles are in progress. The next scheduled run will try again."
+            echo "Battles are in progress, nothing deployed. The overnight run (or the next push) will try again."
             echo "deployed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
