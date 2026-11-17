@@ -9,7 +9,7 @@
 	ruleset: ['Standard NatDex', 'Terastal Clause'],
 	banlist: [
 		'ND Uber', 'ND AG', 'Arena Trap', 'Moody', 'Power Construct', 'Shadow Tag', 'King\'s Rock',
-		'Quick Claw', 'Razor Fang', 'Assist', 'Baton Pass', 'Last Respects', 'Shed Tail', 'Hitmonchan-Dystorian', 'Skeleymore',
+		'Quick Claw', 'Razor Fang', 'Assist', 'Baton Pass', 'Last Respects', 'Shed Tail', 'Hitmonchan-Dystorian', 'Skelaymore',
 	],
 	unbanlist: [
 		// Pokemon Legends: Z-A Megas that are legal in Dystoria, with their Mega Stones.
