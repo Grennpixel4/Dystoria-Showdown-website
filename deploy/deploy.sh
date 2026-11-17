@@ -23,8 +23,9 @@ fi
 battles_running() {
 	systemctl is-active --quiet showdown || return 1
 	[[ -f "$BATTLES_FILE" ]] || return 1
-	local stamp count
-	read -r stamp count < "$BATTLES_FILE" || return 1
+	local stamp='' count=''
+	read -r stamp count < "$BATTLES_FILE" || true
+	[[ "$stamp" =~ ^[0-9]+$ && "$count" =~ ^[0-9]+$ ]] || return 1
 	(( $(date +%s) * 1000 - stamp < 120000 )) || return 1
 	(( count > 0 ))
 }
