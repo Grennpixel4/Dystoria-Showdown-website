@@ -56,7 +56,6 @@
 		'Falinks-Mega', 'Falinksite',
 		'Scovillain-Mega', 'Scovillainite',
 		'Glimmora-Mega', 'Glimmoranite',
-		'Baxcalibur-Mega', 'Baxcalibrite',
 	],
 },
 {
