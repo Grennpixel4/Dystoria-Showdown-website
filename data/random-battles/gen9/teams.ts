@@ -848,6 +848,11 @@ export class RandomTeams {
 					counter = this.addMove(moveid, moves, types, abilities, teamDetails, species, isLead,
 						movePool, teraType, role, isDoubles);
 				}
+					// Enforce Destiny Bond on Mega Banette, since that move is its entire reason to exist
+		if (movePool.includes('destinybond') && species.id === 'banettemega') {
+			counter = this.addMove('destinybond', moves, types, abilities, teamDetails, species, isLead,
+				movePool, preferredType, role);
+		}
 			}
 			// Enforce Fake Out on slow Pokemon
 			if (movePool.includes('fakeout') && species.baseStats.spe <= 50) {
