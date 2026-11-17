@@ -7819,7 +7819,7 @@
         ]
     },
     "venusaurmega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -7829,7 +7829,7 @@
         ]
     },
     "charizardmegax": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -7844,7 +7844,7 @@
         ]
     },
     "charizardmegay": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -7859,7 +7859,7 @@
         ]
     },
     "blastoisemega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -7869,7 +7869,7 @@
         ]
     },
     "beedrillmega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -7884,7 +7884,7 @@
         ]
     },
     "pidgeotmega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -7894,7 +7894,7 @@
         ]
     },
     "raichumegax": {
-        "level": 51,
+        "level": 71,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -7905,7 +7905,7 @@
         ]
     },
     "raichumegay": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -7915,7 +7915,7 @@
         ]
     },
     "clefablemega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -7930,7 +7930,7 @@
         ]
     },
     "alakazammega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -7941,7 +7941,7 @@
         ]
     },
     "victreebelmega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -7951,7 +7951,7 @@
         ]
     },
     "slowbromega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -7966,7 +7966,7 @@
         ]
     },
     "gengarmega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -7976,7 +7976,7 @@
         ]
     },
     "kangaskhanmega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -7987,7 +7987,7 @@
         ]
     },
     "starmiemega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -7998,7 +7998,7 @@
         ]
     },
     "pinsirmega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8013,7 +8013,7 @@
         ]
     },
     "gyaradosmega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8023,7 +8023,7 @@
         ]
     },
     "aerodactylmega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8034,7 +8034,7 @@
         ]
     },
     "dragonitemega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8044,7 +8044,7 @@
         ]
     },
     "meganiummega": {
-        "level": 48,
+        "level": 68,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8054,7 +8054,7 @@
         ]
     },
     "feraligatrmega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8069,7 +8069,7 @@
         ]
     },
     "ampharosmega": {
-        "level": 53,
+        "level": 73,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8084,7 +8084,7 @@
         ]
     },
     "steelixmega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8099,7 +8099,7 @@
         ]
     },
     "scizormega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Bulky Support",
@@ -8114,7 +8114,7 @@
         ]
     },
     "heracrossmega": {
-        "level": 48,
+        "level": 68,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8124,7 +8124,7 @@
         ]
     },
     "skarmorymega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8139,7 +8139,7 @@
         ]
     },
     "houndoommega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8149,7 +8149,7 @@
         ]
     },
     "tyranitarmega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8159,7 +8159,7 @@
         ]
     },
     "sceptilemega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Wallbreaker",
@@ -8174,7 +8174,7 @@
         ]
     },
     "blazikenmega": {
-        "level": 44,
+        "level": 64,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8184,7 +8184,7 @@
         ]
     },
     "swampertmega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8199,7 +8199,7 @@
         ]
     },
     "gardevoirmega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8215,7 +8215,7 @@
         ]
     },
     "sableyemega": {
-        "level": 54,
+        "level": 74,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8225,7 +8225,7 @@
         ]
     },
     "mawilemega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8235,7 +8235,7 @@
         ]
     },
     "aggronmega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8250,7 +8250,7 @@
         ]
     },
     "medichammega": {
-        "level": 48,
+        "level": 68,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8265,7 +8265,7 @@
         ]
     },
     "manectricmega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8275,7 +8275,7 @@
         ]
     },
     "sharpedomega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8285,7 +8285,7 @@
         ]
     },
     "cameruptmega": {
-        "level": 54,
+        "level": 74,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8295,7 +8295,7 @@
         ]
     },
     "altariamega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8305,7 +8305,7 @@
         ]
     },
     "banettemega": {
-        "level": 52,
+        "level": 72,
         "sets": [
             {
                 "role": "Fast Support",
@@ -8320,7 +8320,7 @@
         ]
     },
     "chimechomega": {
-        "level": 50,
+        "level": 72,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8330,7 +8330,7 @@
         ]
     },
     "absolmega": {
-        "level": 51,
+        "level": 71,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8341,7 +8341,7 @@
         ]
     },
     "absolmegaz": {
-        "level": 44,
+        "level": 64,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8351,7 +8351,7 @@
         ]
     },
     "glaliemega": {
-        "level": 52,
+        "level": 62,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8371,7 +8371,7 @@
         ]
     },
     "salamencemega": {
-        "level": 43,
+        "level": 63,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8381,7 +8381,7 @@
         ]
     },
     "metagrossmega": {
-        "level": 45,
+        "level": 65,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8392,7 +8392,7 @@
         ]
     },
     "lopunnymega": {
-        "level": 48,
+        "level": 68,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8407,7 +8407,7 @@
         ]
     },
     "garchompmega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Fast Support",
@@ -8422,7 +8422,7 @@
         ]
     },
     "garchompmegaz": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Fast Support",
@@ -8438,7 +8438,7 @@
         ]
     },
     "lucariomega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8453,7 +8453,7 @@
         ]
     },
     "lucariomegaz": {
-        "level": 44,
+        "level": 64,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8463,7 +8463,7 @@
         ]
     },
     "abomasnowmega": {
-        "level": 51,
+        "level": 71,
         "sets": [
             {
                 "role": "Bulky Support",
@@ -8473,7 +8473,7 @@
         ]
     },
     "gallademega": {
-        "level": 48,
+        "level": 68,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8483,7 +8483,7 @@
         ]
     },
     "froslassmega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8498,7 +8498,7 @@
         ]
     },
     "emboarmega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8508,7 +8508,7 @@
         ]
     },
     "excadrillmega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8518,7 +8518,7 @@
         ]
     },
     "audinomega": {
-        "level": 57,
+        "level": 77,
         "sets": [
             {
                 "role": "Bulky Support",
@@ -8528,7 +8528,7 @@
         ]
     },
     "scolipedemega": {
-        "level": 48,
+        "level": 68,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8543,7 +8543,7 @@
         ]
     },
     "eelektrossmega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8553,7 +8553,7 @@
         ]
     },
     "chandeluremega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8563,7 +8563,7 @@
         ]
     },
     "golurkmega": {
-        "level": 51,
+        "level": 71,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8573,7 +8573,7 @@
         ]
     },
     "delphoxmega": {
-        "level": 46,
+        "level": 66,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8583,7 +8583,7 @@
         ]
     },
     "greninjamega": {
-        "level": 48,
+        "level": 68,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8599,7 +8599,7 @@
         ]
     },
     "pyroarmega": {
-        "level": 49,
+        "level": 69,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8614,7 +8614,7 @@
         ]
     },
     "floettemega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8629,7 +8629,7 @@
         ]
     },
     "meowsticmmega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8640,7 +8640,7 @@
         ]
     },
     "meowsticfmega": {
-        "level": 49,
+        "level": 79,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8651,7 +8651,7 @@
         ]
     },
     "malamarmega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8666,7 +8666,7 @@
         ]
     },
     "barbaraclemega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8676,7 +8676,7 @@
         ]
     },
     "dragalgemega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8686,7 +8686,7 @@
         ]
     },
     "hawluchamega": {
-        "level": 48,
+        "level": 78,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8701,7 +8701,7 @@
         ]
     },
     "crabominablemega": {
-        "level": 50,
+        "level": 70,
         "sets": [
             {
                 "role": "Bulky Setup",
@@ -8711,7 +8711,7 @@
         ]
     },
     "golisopodmega": {
-        "level": 45,
+        "level": 75,
         "sets": [
             {
                 "role": "Wallbreaker",
@@ -8726,7 +8726,7 @@
         ]
     },
     "drampamega": {
-        "level": 53,
+        "level": 73,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8736,7 +8736,7 @@
         ]
     },
     "falinksmega": {
-        "level": 49,
+        "level": 72,
         "sets": [
             {
                 "role": "Setup Sweeper",
@@ -8746,7 +8746,7 @@
         ]
     },
     "scovillainmega": {
-        "level": 50,
+        "level": 82,
         "sets": [
             {
                 "role": "Bulky Attacker",
@@ -8761,7 +8761,7 @@
         ]
     },
     "glimmoramega": {
-        "level": 45,
+        "level": 75,
         "sets": [
             {
                 "role": "Fast Attacker",
@@ -8772,7 +8772,7 @@
         ]
     },
     "baxcaliburmega": {
-        "level": 47,
+        "level": 67,
         "sets": [
             {
                 "role": "Bulky Setup",
