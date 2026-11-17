@@ -1179,8 +1179,7 @@ export class RandomTeams {
 				return (role === 'Fast Attacker') ? 'Silver Powder' : 'Life Orb';
 			}
 		}
-		if (species.requiredItems) {
-			// Z-Crystals aren't available in Gen 9, so require Plates
+if (species.requiredItems) {
 			if (species.baseSpecies === 'Arceus') {
 				return species.requiredItems[0];
 			}
@@ -1786,6 +1785,7 @@ export class RandomTeams {
 		const teamDetails: RandomTeamsTypes.TeamDetails = {};
 		let numMaxLevelPokemon = 0;
 		let megaCount = 0;
+		let zCount = 0;
 
 		const pokemonList = isDoubles ? Object.keys(this.randomDoublesSets) : Object.keys(this.randomSets);
 		const [pokemonPool, baseSpeciesPool] = this.getPokemonPool(type, pokemon, isMonotype, pokemonList);
@@ -1808,6 +1808,9 @@ export class RandomTeams {
 
 			const isMega = species.id.includes('mega');
 			if (isMega && megaCount >= 1) continue;
+
+			const hasZItem = species.requiredItems?.some(item => item.includes('ium Z') || item.includes('Z-Crystal')) || false;
+			if (hasZItem && zCount >= 1) continue;
 
 			// Treat Ogerpon formes and Terapagos like the Tera Blast user role; reject if team has one already
 			if (['ogerpon', 'ogerponhearthflame', 'terapagos'].includes(species.id) && teamDetails.teraBlast) continue;
@@ -1914,7 +1917,8 @@ export class RandomTeams {
 			gensUsed.add(getGen(species));
 
 			if (isMega) megaCount++;
-			
+
+			if (hasZItem) zCount++;
 			// Increment type counters
 			for (const typeName of types) {
 				if (typeName in typeCount) {
