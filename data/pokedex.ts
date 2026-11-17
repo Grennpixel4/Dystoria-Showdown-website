@@ -22300,7 +22300,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		num: 1536,
 		name: "Mortapult",
 		types: ["Ice", "Ground"],
-		baseStats: { hp: 76, atk: 100, def: 85, spa: 135, spd: 70, spe: 134 },
+		baseStats: { hp: 75, atk: 100, def: 85, spa: 110, spd: 95, spe: 134 },
 		abilities: { 0: "Snow Warning", H: "Rocky Payload" },
 		height: 1.2,
 		weightkg: 125,
