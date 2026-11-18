@@ -6004,7 +6004,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		color: "Yellow",
 		prevo: "Nincada",
 		evoLevel: 20,
-		evos: ["Ninjinsen"],
+		evos: ["Ninjinsin"],
 		eggGroups: ["Bug"],
 	},
 	shedinja: {
@@ -22151,7 +22151,7 @@ export const Pokedex: import('../sim/dex-species').SpeciesDataTable = {
 		evoItem: "Shiny Stone",
 		eggGroups: ["Fairy", "Human-Like"],
 	},
-	ninjinsen: {
+	ninjinsin: {
 		num: 1525, 
 		name: "Ninjinsin",
 		types: ["Bug", "Flying"],
