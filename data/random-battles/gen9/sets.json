@@ -11523,7 +11523,7 @@
                 "role": "Bulky Support",
                 "movepool": ["Roost", "Light Screen", "Haze", "Moonblast", "Ice Beam", "Yawn", "Snowscape"],
                 "abilities": ["Slush Rush"]
-            },
+            }
         ]
     },
         "hitmonleedystorian": {
@@ -11536,7 +11536,7 @@
             }
         ]
     },
-        "hitmonleedystorian": {
+        "hitmonchanystorian": {
         "level": 78,
         "sets": [
             {
@@ -11578,7 +11578,7 @@
                 "role": "Bulky Setup",
                 "movepool": ["Wild Charge", "Liquidation", "Aqua Jet", "Dragon Dance", "Crunch", "Earthquake"],
                 "abilities": ["Drizzle"]
-            },
+            }
         ]
     },
         "sharpedodystorian": {
@@ -11731,16 +11731,6 @@
             }
         ]
     },
-        "ironstratus": {
-        "level": 78,
-        "sets": [
-            {
-                "role": "Fast Attacker",
-                "movepool": ["Boomburst", "Volt Switch", "Overheat", "Alluring Voice", "Flash Cannon", "Thunderbolt"],
-                "abilities": ["Quark Drive"]
-            }
-        ]
-    },
         "irongrinder": {
         "level": 76,
         "sets": [
@@ -11817,6 +11807,7 @@
             {
                 "role": "Bulky Support",
                 "movepool": ["Headlong Rush", "Throat Chop", "Knock Off", "Stealth Rock", "Toxic", "Superpower"],
+                 "abilities": ["Sharpness","Skull Splinter"]
             }
         ]
     },
@@ -11826,6 +11817,7 @@
             {
                 "role": "Bulky Attacker",
                 "movepool": ["Blazing Cleave", "Shadow Sneak", "Poltergeist", "willowisp", "Crunch", "Stone Edge","Knock Off"],
+                "abilities": ["Sharpness", "Incendia"]
             }
         ]
     },
@@ -11998,5 +11990,5 @@
                 "abilities": ["Dazzling"]
             }
         ]
-    },
+    }
 }
