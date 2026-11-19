@@ -848,6 +848,11 @@ export class RandomTeams {
 					counter = this.addMove(moveid, moves, types, abilities, teamDetails, species, isLead,
 						movePool, teraType, role, isDoubles);
 				}
+					// Enforce Destiny Bond on Mega Banette, since that move is its entire reason to exist
+		if (movePool.includes('destinybond') && species.id === 'banettemega') {
+			counter = this.addMove('destinybond', moves, types, abilities, teamDetails, species, isLead,
+				movePool, preferredType, role);
+		}
 			}
 			// Enforce Fake Out on slow Pokemon
 			if (movePool.includes('fakeout') && species.baseStats.spe <= 50) {
@@ -1145,7 +1150,7 @@ export class RandomTeams {
 		// If all abilities are rejected, prioritize weather abilities over non-weather abilities
 		if (!abilityAllowed.length) {
 			const weatherAbilities = abilities.filter(
-				a => ['Chlorophyll', 'Hydration', 'Sand Force', 'Sand Rush', 'Slush Rush', 'Solar Power', 'Swift Swim'].includes(a)
+				a => ['Chlorophyll', 'Hydration', 'Sand Force', 'Sand Rush', 'Slush Rush', 'Solar Power', 'Swift Swim',"Shadow Walker","Storm Chaser"].includes(a)
 			);
 			if (weatherAbilities.length) return this.sample(weatherAbilities);
 		}
@@ -1174,8 +1179,7 @@ export class RandomTeams {
 				return (role === 'Fast Attacker') ? 'Silver Powder' : 'Life Orb';
 			}
 		}
-		if (species.requiredItems) {
-			// Z-Crystals aren't available in Gen 9, so require Plates
+if (species.requiredItems) {
 			if (species.baseSpecies === 'Arceus') {
 				return species.requiredItems[0];
 			}
@@ -1780,6 +1784,8 @@ export class RandomTeams {
 		const typeDoubleWeaknesses: { [k: string]: number } = {};
 		const teamDetails: RandomTeamsTypes.TeamDetails = {};
 		let numMaxLevelPokemon = 0;
+		let megaCount = 0;
+		let zCount = 0;
 
 		const pokemonList = isDoubles ? Object.keys(this.randomDoublesSets) : Object.keys(this.randomSets);
 		const [pokemonPool, baseSpeciesPool] = this.getPokemonPool(type, pokemon, isMonotype, pokemonList);
@@ -1799,6 +1805,12 @@ export class RandomTeams {
 
 			// Limit to one of each species (Species Clause)
 			if (baseFormes[species.baseSpecies]) continue;
+
+			const isMega = species.id.includes('mega');
+			if (isMega && megaCount >= 1) continue;
+
+			const hasZItem = species.requiredItems?.some(item => item.includes('ium Z') || item.includes('Z-Crystal')) || false;
+			if (hasZItem && zCount >= 1) continue;
 
 			// Treat Ogerpon formes and Terapagos like the Tera Blast user role; reject if team has one already
 			if (['ogerpon', 'ogerponhearthflame', 'terapagos'].includes(species.id) && teamDetails.teraBlast) continue;
@@ -1904,6 +1916,9 @@ export class RandomTeams {
 			baseFormes[species.baseSpecies] = 1;
 			gensUsed.add(getGen(species));
 
+			if (isMega) megaCount++;
+
+			if (hasZItem) zCount++;
 			// Increment type counters
 			for (const typeName of types) {
 				if (typeName in typeCount) {
@@ -2813,7 +2828,7 @@ export class RandomTeams {
 			trickroom: 1,
 			auroraveil: 1,
 		};
-		const weatherAbilities = ['drizzle', 'drought', 'snowwarning', 'sandstream'];
+		const weatherAbilities = ['drizzle', 'drought', 'snowwarning', 'sandstream', 'shroudcall'];
 		const terrainAbilities: { [k: string]: string } = {
 			electricsurge: "electric",
 			psychicsurge: "psychic",
@@ -2944,6 +2959,7 @@ export class RandomTeams {
 		const weatherAbilitiesSet: { [k: string]: string } = {
 			drizzle: "raindance",
 			drought: "sunnyday",
+			shroudcall: "eeriefog",
 			snowwarning: "hail",
 			sandstream: "sandstorm",
 		};

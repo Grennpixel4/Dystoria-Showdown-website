@@ -5479,7 +5479,7 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 	},
 	baxcaliburmega: {
 		tier: "Illegal",
-		natDexTier: "OU",
+		natDexTier: "Uber",
 	},
 	tatsugiri: {
 		tier: "PU",
@@ -6617,7 +6617,7 @@ export const FormatsData: import('../sim/dex-species').SpeciesFormatsDataTable =
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",
 	},
-	ninjinsen: {
+	ninjinsin: {
 		tier: "PU",
 		"doublesTier": "(DUU)",
 		natDexTier: "OU",

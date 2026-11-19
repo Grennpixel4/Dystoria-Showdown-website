@@ -56,7 +56,6 @@
 		'Falinks-Mega', 'Falinksite',
 		'Scovillain-Mega', 'Scovillainite',
 		'Glimmora-Mega', 'Glimmoranite',
-		'Baxcalibur-Mega', 'Baxcalibrite',
 	],
 },
 {
@@ -77,6 +76,12 @@
 	tournamentShow: false,
 	rated: false,
 	// debug skips every ban, but these two limits are still enforced by the engine itself
-	ruleset: ['Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Max Level = 99999', 'Max Move Count = 24'],
+	ruleset: ['Team Preview', 'HP Percentage Mod', 'Cancel Mod', 'Max Move Count = 24'],
+},
+		{
+	name: "[Gen 9] Dystoria Random Battle",
+	mod: 'gen9',
+	team: 'random',
+	ruleset: ['PotD', 'Obtainable', 'Species Clause', 'HP Percentage Mod', 'Cancel Mod', 'Sleep Clause Mod', 'Illusion Level Mod', 'Terastal Clause'],
 },
 ];

@@ -21722,7 +21722,7 @@ shortcircuit: {
 chillelagh: {
     num: 20018,
     accuracy: 100,
-    basePower: 120,
+    basePower: 100,
     category: "Physical",
     name: "Chillelagh",
     shortDesc: "Ignores target Evasion and Defense boosts.",
