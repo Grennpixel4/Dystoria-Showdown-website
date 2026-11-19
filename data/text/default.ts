@@ -299,6 +299,12 @@ export const DefaultText: { [id: IDEntry]: DefaultText } = {
 		upkeep: "  (The sandstorm is raging.)",
 		damage: "  {POKEMON} is buffeted by the sandstorm!",
 	},
+	eeriefog: {
+		weatherName: "Fog",
+		start: "  An eerie fog rolled in!",
+		end: "  The eerie fog faded.",
+		upkeep: "  (The eerie fog lingers.)",
+	},
 	sunnyday: {
 		weatherName: "Sun",
 		start: "  The sunlight turned harsh!",
