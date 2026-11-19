@@ -1150,7 +1150,7 @@ export class RandomTeams {
 		// If all abilities are rejected, prioritize weather abilities over non-weather abilities
 		if (!abilityAllowed.length) {
 			const weatherAbilities = abilities.filter(
-				a => ['Chlorophyll', 'Hydration', 'Sand Force', 'Sand Rush', 'Slush Rush', 'Solar Power', 'Swift Swim'].includes(a)
+				a => ['Chlorophyll', 'Hydration', 'Sand Force', 'Sand Rush', 'Slush Rush', 'Solar Power', 'Swift Swim',"Shadow Walker","Storm Chaser"].includes(a)
 			);
 			if (weatherAbilities.length) return this.sample(weatherAbilities);
 		}
@@ -2828,7 +2828,7 @@ if (species.requiredItems) {
 			trickroom: 1,
 			auroraveil: 1,
 		};
-		const weatherAbilities = ['drizzle', 'drought', 'snowwarning', 'sandstream'];
+		const weatherAbilities = ['drizzle', 'drought', 'snowwarning', 'sandstream', 'shroudcall'];
 		const terrainAbilities: { [k: string]: string } = {
 			electricsurge: "electric",
 			psychicsurge: "psychic",
@@ -2959,6 +2959,7 @@ if (species.requiredItems) {
 		const weatherAbilitiesSet: { [k: string]: string } = {
 			drizzle: "raindance",
 			drought: "sunnyday",
+			shroudcall: "eeriefog",
 			snowwarning: "hail",
 			sandstream: "sandstorm",
 		};
